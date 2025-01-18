@@ -50,6 +50,15 @@
         <div class="col">
             <a type="button" class="btn btn-info w-100">Sadqah</a>
         </div>
+        <div id="adminButtons" style="display: none;">
+            <a href="users/users.html" class="btn btn-primary w-100">Users</a>
+        </div>
+        <div class="col">
+            <button type="button" id="logoutBtn" class="btn btn-danger w-100">Logout</button>
+        </div>
+        <div class="mb-3">
+            <a href="loans/loans.html" class="btn btn-primary w-100">Loans</a>
+        </div>
     </div>
 </div>
 
@@ -81,43 +90,8 @@
     </table>
 </div>
 
-<script>
-
-
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const tableData = JSON.parse(localStorage.getItem('transactionsTableData'));
-        // console.log(tableData)
-        if (tableData && tableData.length > 0) {
-            const currentMonthData = tableData[0]; // First object which is the current month data
-            const { expenses, cashins,monthYear } = currentMonthData;
-            document.getElementById('SummaryLabel').textContent= monthYear+ " Sumamry"
-            // console.log(monthYear)
-
-            // Calculate total expenses and total cashin
-            const totalExpenses = Object.values(expenses).reduce((acc, value) => acc + value, 0);
-            const totalCashin = Object.values(cashins).reduce((acc, value) => acc + value, 0);
-
-            // Calculate wallet value
-            const walletValue = totalCashin - totalExpenses;
-
-            // Set the values in the table
-            document.getElementById('walletValue').textContent = `${walletValue} Tk`;
-            document.getElementById('expensesValue').textContent = `${totalExpenses} Tk`;
-            document.getElementById('cashinValue').textContent = `${totalCashin} Tk`;
-        } else {
-            // Handle case when there is no data
-            document.getElementById('currentMonthTable').innerHTML = '<tr><td colspan="2">No data available</td></tr>';
-        }
-    });
-
-
-
-</script>
-
-<!-- Bootstrap 5 JS and dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
-<!-- Custom JS -->
+<script type="module" src="assets/js/index.js"></script>
 </body>
 </html>

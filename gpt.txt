@@ -1,109 +1,3438 @@
-I have a object like below in localstorage as "transactionsTableData" I wanna take the first object which will be the current month data, show it on the index page.
-there wil be a table where there will be two columns. one for key another for values.  the table should have three rows. wallet, Expenses and Cashin. the wallets value should
-be the difference of cashin  and expense. refactor the html and create js if need to do this:
+I have an app, the codebase is given below. I wanna add a registration page and login here.
+I will use firebase email-Password login system. you will ananlyze the whole code,
+create a login and registration page. 
+after successfully loggedin a user should see the index page. otherwise no page can be accessed
+without login.
 
-the object from localstorage:
-[
-    {
-        "monthYear": "June,2024",
-        "expenses": {
-            "Entertainment": 129,
-            "Food": 653,
-            "food": 10
-        },
-        "cashins": {
-            "salary": 42000,
-            "Tuition": 5000
+maintain the folder structure. keep the js,css files in the assets folder.
+    
+    
+the codebase: 
+    ================================================================
+    File Summary
+    ================================================================
+    Purpose:
+    --------
+    This file contains a packed representation of the entire repository's contents.
+    It is designed to be easily consumable by AI systems for analysis, code review,
+    or other automated processes.
+    File Format:
+    ------------
+    The content is organized as follows:
+    1. This summary section
+    2. Repository information
+    3. Repository structure
+    4. Multiple file entries, each consisting of:
+    a. A separator line (================)
+    b. The file path (File: path/to/file)
+    c. Another separator line
+    d. The full contents of the file
+    e. A blank line
+    Usage Guidelines:
+    -----------------
+    - This file should be treated as read-only. Any changes should be made to the
+    original repository files, not this packed version.
+    - When processing this file, use the file path to distinguish
+    between different files in the repository.
+    - Be aware that this file may contain sensitive information. Handle it with
+    the same level of security as you would the original repository.
+    ================================================================
+    Repository Structure
+    ================================================================
+    .gitignore
+    assets/js/categories/manageCategories.js
+    assets/js/fireBaseConfig.js
+    assets/js/monthStat/monthStat.js
+    assets/js/transactions/addTransaction.js
+    assets/js/transactions/CashInList.js
+    assets/js/transactions/transactionDetails.js
+    assets/js/transactions/transactionList.js
+    category/categoryList.html
+    firebase.json
+    gpt.txt
+    index.html
+    index.js
+    monthStat/monthStat.html
+    package.json
+    prompts/schema change.txt
+    README.md
+    sampleData/expensetrackerv1-690e6-default-rtdb-export.json
+    transactions/addTransaction.html
+    transactions/cashInList.html
+    transactions/transactionDetails.html
+    transactions/transactionList.html
+    ================================================================
+    Repository Files
+    ================================================================
+    ================
+    File: .gitignore
+    ================
+    # Logs
+
+    ================
+    File: assets/js/categories/manageCategories.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    document.addEventListener('DOMContentLoaded', function () {
+        const categoryTableBody = document.getElementById('categoryTableBody');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const categoryNameInput = document.getElementById('categoryName'); // Input for category name
+        const addCategoryModal = new bootstrap.Modal(document.getElementById('addCategoryModal')); // Bootstrap modal instance
+        const userId = 'shakhawatt';  // Define the user ID here or retrieve from user authentication session
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const categoryName = categoryNameInput.value;
+            const isExpense = false; // Get the state of the checkbox
+            if (categoryName) {
+                const newCategoryRef = push(ref(db, `users/${userId}/categories`));
+                set(newCategoryRef, {
+                    name: categoryName,
+                    value: categoryName,
+                    isExpense: isExpense, // Set the isExpense value based on checkbox
+                    creationDate: new Date().toLocaleDateString("en-GB")
+                }).then(() => {
+                    addCategoryModal.hide(); // Properly hide the modal using Bootstrap's method
+                    categoryNameInput.value = ''; // Clear the input field after adding
+                    alert("Category added successfully!");
+                }).catch(error => {
+                    alert("Failed to add category: " + error.message);
+                });
+            }
+        });
+        // Load and display categories
+        onValue(ref(db, `users/${userId}/categories`), (snapshot) => {
+            const data = snapshot.val();
+            // console.log(data);
+            localStorage.setItem('categoriesOnDb', JSON.stringify(data));
+            categoryTableBody.innerHTML = '';
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const category = data[key];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <span class="category-name">${category.name}</span>
+                            <input type="text" class="form-control edit-field" value="${category.name}">
+                        </td>
+                        <td>
+                            <input type="checkbox" class="form-check-input is-expense-checkbox" ${category.isExpense ? 'checked' : ''}>
+                        </td>
+                        <td>
+                            <button class="btn edit-btn"><i class="bi bi-pencil"></i></button>
+                            <button class="btn save-btn" style="display:none;"><i class="bi bi-check-lg"></i></button>
+                        </td>
+                        <td>
+                            <button class="btn delete-btn"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    attachEventListeners(row, key);
+                    categoryTableBody.appendChild(row);
+                });
+            }
+        }, {
+            onlyOnce: false  // Set to false for real-time updates
+        });
+        function attachEventListeners(row, key) {
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+            const deleteBtn = row.querySelector('.delete-btn');
+            const categoryName = row.querySelector('.category-name');
+            const editField = row.querySelector('.edit-field');
+            const isExpenseCheckbox = row.querySelector('.is-expense-checkbox');
+            isExpenseCheckbox.addEventListener('change', () => {
+                update(ref(db, `users/${userId}/categories/${key}`), { isExpense: isExpenseCheckbox.checked }).catch(error => {
+                    alert("Failed to update expense status: " + error.message);
+                    isExpenseCheckbox.checked = !isExpenseCheckbox.checked; // Revert the checkbox if the update fails
+                });
+            });
+            editBtn.addEventListener('click', () => {
+                categoryName.style.display = 'none';
+                editField.style.display = 'block';
+                editBtn.style.display = 'none';
+                saveBtn.style.display = 'block';
+            });
+            saveBtn.addEventListener('click', () => {
+                const updatedName = editField.value;
+                update(ref(db, `users/${userId}/categories/${key}`), { name: updatedName, value: updatedName }).then(() => {
+                    categoryName.textContent = updatedName;
+                    categoryName.style.display = 'block';
+                    editField.style.display = 'none';
+                    editBtn.style.display = 'block';
+                    saveBtn.style.display = 'none';
+                }).catch(error => {
+                    alert("Failed to update category: " + error.message);
+                });
+            });
+            deleteBtn.addEventListener('click', () => {
+                if (confirm("Are you sure you want to delete this category?")) {
+                    remove(ref(db, `users/${userId}/categories/${key}`)).then(() => {
+                        row.remove();
+                    }).catch(error => {
+                        alert("Failed to delete category: " + error.message);
+                    });
+                }
+            });
         }
-    },
-    {
-        "monthYear": "May,2024",
-        "expenses": {
-            "Outing": 640,
-            "Transport": 728,
-            "Food": 1904
-        },
-        "cashins": {}
-    },
-    {
-        "monthYear": "April,2024",
-        "expenses": {
-            "Food": 767,
-            "Outing": 2180,
-            "Home Expense": 173,
-            "Transport": 891
-        },
-        "cashins": {
-            "Loan Payback": 600
+    });
+    ================
+    File: assets/js/fireBaseConfig.js
+    ================
+    // firebaseConfig.js
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyANYk0LlxsQwGTaw-u4y9EzALsGLjFXPcE",
+        authDomain: "expensetrackerv1-690e6.firebaseapp.com",
+        projectId: "expensetrackerv1-690e6",
+        storageBucket: "expensetrackerv1-690e6.appspot.com",
+        messagingSenderId: "674219928023",
+        appId: "1:674219928023:web:724532785517ad65758392",
+        measurementId: "G-DH4X850KP0",
+        databaseURL: "https://expensetrackerv1-690e6-default-rtdb.firebaseio.com/"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    export { db };
+    ================
+    File: assets/js/monthStat/monthStat.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    // Function to format date as "17th June, 2024"
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        return `${getOrdinal(day)} ${month}, ${year}`;
+    }
+    // Helper function to get the ordinal suffix for a day
+    function getOrdinal(n) {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function fetchTransactions() {
+        const userId = 'shakhawatt'; // Your user ID
+        const transactionsRef = ref(db, `users/${userId}/transactions`);
+        onValue(transactionsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const listContainer = document.querySelector('#listContainer');
+                listContainer.innerHTML = ''; // Clear existing content
+                // Convert object to array, sort by date in descending order
+                const transactionsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => new Date(b.date) - new Date(a.date)); // Sorting in descending order
+                const monthData = {};
+                transactionsArray.forEach(transaction => {
+                    const monthYear = getMonthYear(transaction.date);
+                    if (!monthData[monthYear]) monthData[monthYear] = { expenses: {}, cashins: {} };
+                    const type = transaction.expenseType;
+                    if (transaction.transactionType === 'Expense') {
+                        if (!monthData[monthYear].expenses[type]) monthData[monthYear].expenses[type] = 0;
+                        monthData[monthYear].expenses[type] += parseFloat(transaction.amount);
+                    } else if (transaction.transactionType === 'CashIn') {
+                        if (!monthData[monthYear].cashins[type]) monthData[monthYear].cashins[type] = 0;
+                        monthData[monthYear].cashins[type] += parseFloat(transaction.amount);
+                    }
+                });
+                // Convert monthData object to array and sort in descending order of monthYear
+                const sortedMonthData = Object.keys(monthData).sort((a, b) => new Date(b.split(',')[1], new Date(a.split(',')[0]).getMonth()) - new Date(a.split(',')[1], new Date(b.split(',')[0]).getMonth()));
+                // Save the sorted month data to local storage
+                saveToLocalStorage(sortedMonthData, monthData);
+                sortedMonthData.forEach(monthYear => {
+                    const data = monthData[monthYear];
+                    // Create Expense Table
+                    const expenseTable = document.createElement('table');
+                    expenseTable.className = 'table table-striped';
+                    expenseTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="text-align:center; font-weight:bold; background-color: #f8d7da;">${monthYear} - Expenses</th>
+                            </tr>
+                            <tr>
+                                <th>Expense Type</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    `;
+                    const expenseTbody = expenseTable.querySelector('tbody');
+                    let expenseTotal = 0;
+                    for (const [type, total] of Object.entries(data.expenses)) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${type}</td><td>${total.toFixed(2)}Tk</td>`;
+                        expenseTbody.appendChild(row);
+                        expenseTotal += total;
+                    }
+                    const expenseTotalRow = document.createElement('tr');
+                    expenseTotalRow.innerHTML = `<td style="text-align:right; font-weight:bold;">Total:</td><td>${expenseTotal.toFixed(2)}Tk</td>`;
+                    expenseTbody.appendChild(expenseTotalRow);
+                    // Create CashIn Table
+                    const cashinTable = document.createElement('table');
+                    cashinTable.className = 'table table-striped';
+                    cashinTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="text-align:center; font-weight:bold; background-color: #d4edda;">${monthYear} - CashIn</th>
+                            </tr>
+                            <tr>
+                                <th>Expense Type</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    `;
+                    const cashinTbody = cashinTable.querySelector('tbody');
+                    let cashinTotal = 0;
+                    for (const [type, total] of Object.entries(data.cashins)) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${type}</td><td>${total.toFixed(2)}Tk</td>`;
+                        cashinTbody.appendChild(row);
+                        cashinTotal += total;
+                    }
+                    const cashinTotalRow = document.createElement('tr');
+                    cashinTotalRow.innerHTML = `<td style="text-align:right; font-weight:bold;">Total:</td><td>${cashinTotal.toFixed(2)}Tk</td>`;
+                    cashinTbody.appendChild(cashinTotalRow);
+                    // Append both tables to the container
+                    listContainer.appendChild(expenseTable);
+                    listContainer.appendChild(cashinTable);
+                });
+            }
+        }, {
+            onlyOnce: true
+        });
+    }
+    // Function to save data to local storage
+    function saveToLocalStorage(sortedMonthData, monthData) {
+        // localStorage.removeItem('transactionsTableData');
+        const tableData = sortedMonthData.map(monthYear => {
+            const expenses = monthData[monthYear].expenses;
+            const cashins = monthData[monthYear].cashins;
+            return {
+                monthYear,
+                expenses,
+                cashins
+            };
+        });
+        console.log( JSON.stringify(tableData))
+        localStorage.setItem('transactionsTableData', JSON.stringify(tableData));
+    }
+    // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+    // Helper function to get "Month, Year" from a date string
+    function getMonthYear(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+    }
+    // Call the function to fetch transactions when the script loads
+    fetchTransactions();
+    ================
+    File: assets/js/transactions/addTransaction.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    const expenseForm = document.getElementById('expenseForm');
+    const expenseTypeSelect = document.getElementById('expenseType');
+    const transactionTypeSelect = document.getElementById('transactionType');
+    const transactionLabel = document.getElementById('transactionLabel');
+    const userId = 'shakhawatt';  // Define the user ID here or retrieve from user authentication session
+    // Handle transaction type change
+    transactionTypeSelect.addEventListener('change', () => {
+        // console.log("triggerd");
+        expenseTypeSelect.value = "";
+        transactionLabel.textContent = `${transactionTypeSelect.value} Type`;
+        updateExpenseOptions(transactionTypeSelect.value);
+    });
+    // Fetch and filter categories based on transaction type
+    function updateExpenseOptions(transactionType) {
+        onValue(ref(db, `users/${userId}/categories`), (snapshot) => {
+            const categories = snapshot.val();
+            expenseTypeSelect.innerHTML = '';
+            if (categories) {
+                console.log(transactionType);
+                Object.keys(categories).forEach(key => {
+                    const category = categories[key];
+                    console.log(category);
+                    if (transactionType === 'Expense' && category.isExpense) {
+                        const option = document.createElement('option');
+                        option.value = category.value;
+                        option.textContent = category.name;
+                        expenseTypeSelect.appendChild(option);
+                    } else if (transactionType === 'CashIn' && !category.isExpense) {
+                        const option = document.createElement('option');
+                        option.value = category.value;
+                        option.textContent = category.name;
+                        expenseTypeSelect.appendChild(option);
+                    }
+                });
+            }
+        });
+    }
+    // Handle form submission
+    expenseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const transactionType = transactionTypeSelect.value;
+        const expenseType = expenseTypeSelect.value;
+        const amount = document.getElementById('amount').value;
+        const description = document.getElementById('description').value;
+        const date = document.getElementById('date').value;
+        const newTransactionRef = push(ref(db, `users/${userId}/transactions`));
+        set(newTransactionRef, {
+            transactionType: transactionType,
+            expenseType: expenseType,
+            amount: amount,
+            description: description,
+            date: date,
+            timestamp: Date.now()
+        }).then(() => {
+            alert(`${transactionType} successfully added!`);
+        }).catch((error) => {
+            console.error('Error adding transaction: ', error);
+            alert('Failed to add transaction. Please try again.');
+        });
+    });
+    ================
+    File: assets/js/transactions/CashInList.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    // Function to format date as "17th June, 2024"
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        return `${getOrdinal(day)} ${month}, ${year}`;
+    }
+    // Helper function to get the ordinal suffix for a day
+    function getOrdinal(n) {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function fetchTransactions() {
+        const userId = 'shakhawatt'; // Your user ID
+        const transactionsRef = ref(db, `users/${userId}/transactions`);
+        onValue(transactionsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const tbody = document.querySelector('#listTable tbody');
+                tbody.innerHTML = ''; // Clear existing rows
+                // Convert object to array, sort by date in descending order
+                const transactionsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));  // Sorting in descending order
+                let lastMonthYear = '';
+                let monthlyTotal = 0;
+                transactionsArray.forEach((transaction, index, array) => {
+                    if(transaction.transactionType ==='CashIn'){
+                        const formattedDate = formatDate(transaction.date);
+                        const monthYear = getMonthYear(transaction.date);
+                        console.log(transaction)
+                        // Check if it's a new month and year, or last transaction
+                        if (monthYear !== lastMonthYear || index === array.length - 1) {
+                            if (lastMonthYear) { // Not the first transaction, put the total row for the previous month
+                                const monthRowTotal = document.createElement('tr');
+                                monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                                tbody.appendChild(monthRowTotal);
+                            }
+                            // Reset monthly total for new month and set new lastMonthYear
+                            monthlyTotal = 0;
+                            lastMonthYear = monthYear;
+                            // Add month heading for new month
+                            const monthRow = document.createElement('tr');
+                            monthRow.innerHTML = `<td colspan="4" style="text-align:center; font-weight:bold; background-color: #f8f9fa;">${monthYear}</td>`;
+                            tbody.appendChild(monthRow);
+                        }
+                        // Aggregate monthly total
+                        monthlyTotal += parseFloat(transaction.amount || 0);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td>${transaction.expenseType || ''}</td>
+                            <td>${transaction.description || ''}</td>
+                            <td>${transaction.amount || ''}Tk</td>
+                        `;
+                        row.addEventListener('click', () => {
+                            window.location.href = 'transactionDetails.html?id=' + transaction.id;
+                        });
+                        tbody.appendChild(row);
+                    }
+                });
+                // Add total row for last month in the list if not added
+                if (monthlyTotal > 0) {
+                    const monthRowTotal = document.createElement('tr');
+                    monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                    tbody.appendChild(monthRowTotal);
+                }
+            }
+        }, {
+            onlyOnce: true
+        });
+    }
+    // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+    // Helper function to get "Month, Year" from a date string
+    function getMonthYear(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+    }
+    // Call the function to fetch transactions when the script loads
+    fetchTransactions();
+    ================
+    File: assets/js/transactions/transactionDetails.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { ref, onValue, update,set  } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+    function populateOptions(filterExpense) {
+        const selectElement = document.getElementById('expenseType');
+        const data = JSON.parse(localStorage.getItem('categoriesOnDb'));
+        // console.log(data);
+        // console.log(filterExpense);
+        var isExpnese =  filterExpense == "Expense" ? true: false ;
+        // Clear existing options except the first "Select" option
+        selectElement.length = 1;
+        // Iterate through each key in the data object
+        for (const key in data) {
+            const item = data[key];
+            // Check the isExpense property based on the filterExpense parameter
+            if (item.isExpense === isExpnese) {
+                // Create a new option element
+                const option = new Option(item.name, item.value);
+                // Append the option to the select element
+                selectElement.add(option);
+            }
         }
     }
-
-]
-
-the index page:
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Main Menu</title>
-    <!-- Bootstrap 5 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <!-- Custom CSS -->
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
+    function fetchTransactionDetails(transactionId) {
+        const userId = 'shakhawatt';
+        const transactionRef = ref(db, `users/${userId}/transactions/${transactionId}`);
+        onValue(transactionRef, (snapshot) => {
+            const data = snapshot.val();
+            // console.log(data);
+            populateOptions(data.transactionType);
+            if (data) {
+                document.getElementById('transactionType').value = data.transactionType || '';
+                document.getElementById('expenseType').value = data.expenseType || '';
+                document.getElementById('amount').value = data.amount || '';
+                document.getElementById('date').value = data.date || '';
+                document.getElementById('description').textContent = data.description || '';
+            }
+        }, {
+            onlyOnce: true
+        });
+    }
+    document.getElementById('transactionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const transactionId = getQueryParam('id');
+        const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
+        const updatedData = {
+            expenseType: document.getElementById('expenseType').value,
+            amount: document.getElementById('amount').value,
+            date: document.getElementById('date').value,
+            description: document.getElementById('description').value
+        };
+        update(transactionRef, updatedData).then(() => {
+            alert('Transaction successfully updated!');
+        }).catch((error) => {
+            console.error('Error updating transaction: ', error);
+            alert('Failed to update transaction. Please try again.');
+        });
+    });
+    document.getElementById('deleteBtn').addEventListener('click', function() {
+        const transactionId = getQueryParam('id');
+        const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
+        // Use set() with null to remove data in Firebase 9.x
+        set(transactionRef, null).then(() => {
+            alert('Transaction successfully deleted!');
+            window.location.href = 'transactionList.html'; // Redirect to transaction list after deletion
+        }).catch((error) => {
+            console.error('Error deleting transaction: ', error);
+            alert('Failed to delete transaction. Please try again.');
+        });
+    });
+    const transactionId = getQueryParam('id');
+    if (transactionId) {
+        fetchTransactionDetails(transactionId);
+    } else {
+        alert('No transaction ID provided.');
+    }
+    ================
+    File: assets/js/transactions/transactionList.js
+    ================
+    import { db } from "../fireBaseConfig.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+    // Function to format date as "17th June, 2024"
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        return `${getOrdinal(day)} ${month}, ${year}`;
+    }
+    // Helper function to get the ordinal suffix for a day
+    function getOrdinal(n) {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function fetchTransactions() {
+        const userId = 'shakhawatt'; // Your user ID
+        const transactionsRef = ref(db, `users/${userId}/transactions`);
+        onValue(transactionsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const tbody = document.querySelector('#listTable tbody');
+                tbody.innerHTML = ''; // Clear existing rows
+                // Convert object to array, sort by date in descending order
+                const transactionsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));  // Sorting in descending order
+                let lastMonthYear = '';
+                let monthlyTotal = 0;
+                transactionsArray.forEach((transaction, index, array) => {
+                    if(transaction.transactionType ==='Expense'){
+                        const formattedDate = formatDate(transaction.date);
+                        const monthYear = getMonthYear(transaction.date);
+                        // console.log(transaction)
+                        // Check if it's a new month and year, or last transaction
+                        if (monthYear !== lastMonthYear || index === array.length - 1) {
+                            if (lastMonthYear) { // Not the first transaction, put the total row for the previous month
+                                const monthRowTotal = document.createElement('tr');
+                                monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                                tbody.appendChild(monthRowTotal);
+                            }
+                            // Reset monthly total for new month and set new lastMonthYear
+                            monthlyTotal = 0;
+                            lastMonthYear = monthYear;
+                            // Add month heading for new month
+                            const monthRow = document.createElement('tr');
+                            monthRow.innerHTML = `<td colspan="4" style="text-align:center; font-weight:bold; background-color: #f8f9fa;">${monthYear}</td>`;
+                            tbody.appendChild(monthRow);
+                        }
+                        // Aggregate monthly total
+                        monthlyTotal += parseFloat(transaction.amount || 0);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td>${transaction.expenseType || ''}</td>
+                            <td>${transaction.description || ''}</td>
+                            <td>${transaction.amount || ''}Tk</td>
+                        `;
+                        row.addEventListener('click', () => {
+                            window.location.href = 'transactionDetails.html?id=' + transaction.id;
+                        });
+                        tbody.appendChild(row);
+                    }
+                });
+                // Add total row for last month in the list if not added
+                if (monthlyTotal > 0) {
+                    const monthRowTotal = document.createElement('tr');
+                    monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                    tbody.appendChild(monthRowTotal);
+                }
+            }
+        }, {
+            onlyOnce: true
+        });
+    }
+    // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+    // Helper function to get "Month, Year" from a date string
+    function getMonthYear(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+    }
+    // Call the function to fetch transactions when the script loads
+    fetchTransactions();
+    ================
+    File: category/categoryList.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Manage Categories</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+        <style>
+            body, html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+            .edit-field {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container mt-4">
+            <div class="d-flex justify-content-between mb-2">
+                <h2>Categories</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal"><i class="bi bi-plus-lg"></i></button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Is Expense</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryTableBody">
+                    <!-- Categories will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Modal for Adding New Category -->
+        <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addCategoryForm">
+                            <div class="mb-3">
+                                <label for="categoryName" class="form-label">Category Name</label>
+                                <input type="text" class="form-control" id="categoryName" required>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Add Category</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js" type="module"></script>
+        <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+        <script src="../assets/js/categories/manageCategories.js" type="module"></script>
+    </body>
+    </html>
+    ================
+    File: firebase.json
+    ================
+    {
+    "hosting": {
+        "public": ".",
+        "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+        ],
+        "rewrites": [
+        {
+            "source": "**",
+            "destination": "/index.html"
         }
-        .container {
-            max-width: 1080px;
-            margin: auto;
-            padding: 10px;
+        ]
+    }
+    }
+    ================
+    File: gpt.txt
+    ================
+    I have a object like below in localstorage as "transactionsTableData" I wanna take the first object which will be the current month data, show it on the index page.
+    there wil be a table where there will be two columns. one for key another for values.  the table should have three rows. wallet, Expenses and Cashin. the wallets value should
+    be the difference of cashin  and expense. refactor the html and create js if need to do this:
+    the object from localstorage:
+    [
+        {
+            "monthYear": "June,2024",
+            "expenses": {
+                "Entertainment": 129,
+                "Food": 653,
+                "food": 10
+            },
+            "cashins": {
+                "salary": 42000,
+                "Tuition": 5000
+            }
+        },
+        {
+            "monthYear": "May,2024",
+            "expenses": {
+                "Outing": 640,
+                "Transport": 728,
+                "Food": 1904
+            },
+            "cashins": {}
+        },
+        {
+            "monthYear": "April,2024",
+            "expenses": {
+                "Food": 767,
+                "Outing": 2180,
+                "Home Expense": 173,
+                "Transport": 891
+            },
+            "cashins": {
+                "Loan Payback": 600
+            }
         }
-    </style>
-</head>
-<body>
-<div class="container border">
+    ]
+    the index page:
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Main Menu</title>
+        <!-- Bootstrap 5 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Custom CSS -->
+        <style>
+            body, html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="container border">
+        <div class="container mt-5">
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Expense Tracker</h1>
+            </div>
+        </div>
+        <div class="row row-cols-2 g-3">
+            <div class="col">
+                <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
+            </div>
+            <div class="col">
+                <a type="button" class="btn btn-info w-100">Sadqah</a>
+            </div>
+        </div>
+    </div>
+        <script>
+                const tableData = JSON.parse(localStorage.getItem('transactionsTable'));
+                console.log(tableData);
+        </script>
+    <!-- Bootstrap 5 JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    </body>
+    </html>
+    ================
+    File: index.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Main Menu</title>
+        <!-- Bootstrap 5 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Custom CSS -->
+        <style>
+            body, html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="container border">
+        <div class="container mt-5">
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Expense Tracker</h1>
+            </div>
+        </div>
+        <div class="row row-cols-2 g-3">
+            <div class="col">
+                <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
+            </div>
+            <div class="col">
+                <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
+            </div>
+            <div class="col">
+                <a type="button" class="btn btn-info w-100">Sadqah</a>
+            </div>
+        </div>
+    </div>
+    <div class="container border mt-5">
+        <div class="text-center">
+            <h2 class="mt-4 mb-3" id="SummaryLabel">Current Month Summary</h2>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="currentMonthTable">
+                <tr>
+                    <td>Wallet</td>
+                    <td id="walletValue"></td>
+                </tr>
+                <tr>
+                    <td>Expenses</td>
+                    <td id="expensesValue"></td>
+                </tr>
+                <tr>
+                    <td>Cashin</td>
+                    <td id="cashinValue"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableData = JSON.parse(localStorage.getItem('transactionsTableData'));
+            // console.log(tableData)
+            if (tableData && tableData.length > 0) {
+                const currentMonthData = tableData[0]; // First object which is the current month data
+                const { expenses, cashins,monthYear } = currentMonthData;
+                document.getElementById('SummaryLabel').textContent= monthYear+ " Sumamry"
+                // console.log(monthYear)
+                // Calculate total expenses and total cashin
+                const totalExpenses = Object.values(expenses).reduce((acc, value) => acc + value, 0);
+                const totalCashin = Object.values(cashins).reduce((acc, value) => acc + value, 0);
+                // Calculate wallet value
+                const walletValue = totalCashin - totalExpenses;
+                // Set the values in the table
+                document.getElementById('walletValue').textContent = `${walletValue} Tk`;
+                document.getElementById('expensesValue').textContent = `${totalExpenses} Tk`;
+                document.getElementById('cashinValue').textContent = `${totalCashin} Tk`;
+            } else {
+                // Handle case when there is no data
+                document.getElementById('currentMonthTable').innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            }
+        });
+    </script>
+    <!-- Bootstrap 5 JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    </body>
+    </html>
+    ================
+    File: index.js
+    ================
+    function fetchTransactions() {
+        const userId = 'Shakhwatt';
+        const transactionsRef = ref(getDatabase(), `users/${userId}/transactions`);
+        onValue(transactionsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const tbody = document.querySelector('#listTable tbody');
+                tbody.innerHTML = '';
+                const transactionsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                transactionsArray.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${formatDate(transaction.date)}</td>
+                                    <td>${transaction.expenseType}</td>
+                                    <td>${transaction.description}</td>
+                                    <td>${transaction.amount}Tk</td>`;
+                    row.addEventListener('click', () => {
+                        window.location.href = 'transactiondetails.html?id=' + transaction.id;
+                    });
+                    tbody.appendChild(row);
+                });
+            }
+        }, { onlyOnce: true });
+    }
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        return `${day}${getOrdinal(day)} ${month}, ${year}`;
+    }
+    function getOrdinal(n) {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function loadHtml(url, elementId, callback) {
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById(elementId).innerHTML = html;
+                if (callback) {
+                    callback();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading the HTML: ', error);
+                document.getElementById(elementId).innerHTML = "<p>Error loading content. Please try again later.</p>";
+            });
+    }
+    document.getElementById('loadView1').addEventListener('click', () => loadHtml('index.html', 'content'));
+    document.getElementById('loadView2').addEventListener('click', () => loadHtml('transactions/transactionList.html', 'content'));
+    document.getElementById('loadView3').addEventListener('click', () => loadHtml('test2.html', 'content'));
+    // Load Transaction List and initiate fetching transactions
+    document.getElementById('loadView3').addEventListener('click', () => {
+        loadHtml('transactions/transactionList.html', 'content', () => {
+            // Ensure fetchTransactions() is defined and callable
+            if (typeof fetchTransactions === "function") {
+                fetchTransactions();
+            }
+        });
+    });
+    ================
+    File: monthStat/monthStat.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Transaction List</title>
+        <!-- Bootstrap 5 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Custom CSS -->
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+            #listContainer {
+                height: 700px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            table {
+                width: 100%;
+                height: auto;
+                table-layout: fixed;
+                border-collapse: collapse;
+            }
+            thead {
+                position: sticky;
+                top: 0;
+                background-color: #f8f9fa; /* Light gray background */
+                z-index: 10;
+            }
+            th,td {
+                height: 50px; /* Set the height of cells */
+                width: 50px; /* Make cell width span the full width of the table */
+                text-align: center; /* Center text horizontally */
+                vertical-align: middle; /* Center text vertically */
+                word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                overflow-wrap: break-word;
+                border: 1px solid #dee2e6;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="text-center">
+            <h1 class="mt-4 mb-3">Month Stats</h1>
+        </div>
+        <div id="listContainer" class="container border">
+            <!-- Content will be dynamically inserted here -->
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+            </div>
+        </div>
+        <!-- Bootstrap 5 JS and dependencies -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+        <!-- Custom JS -->
+        <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+        <script src="../assets/js/monthStat/monthStat.js" type="module"></script>
+    </body>
+    </html>
+    ================
+    File: package.json
+    ================
+    {
+    "name": "expensetracker",
+    "version": "1.0.0",
+    "description": "this will be expenseTracker App for my personal use",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "firebase": "^10.12.3"
+    }
+    }
+    ================
+    File: prompts/schema change.txt
+    ================
+    1. in this project I am fetching stuff from the db. my current schema is like:
+    2.the problem is I wanna change the
+    schema so tell me where in code should I change to complete the requirement?.
+    the schema should be like :
+        {
+        "dev": {
+            "users": {
+            "shakhawathossain": {
+                "categories": {
+                "-O-eP7h6Dy2vzJjrGbIz": {
+                    "creationDate": "18/06/2024",
+                    "isExpense": true,
+                    "name": "Mess",
+                    "value": "Mess"
+                },
+                "-O-ePA6pz8a0TueAGWG1": {
+                    "creationDate": "18/06/2024",
+                    "isExpense": true,
+                    "name": "Entertainment",
+                    "value": "Entertainment"
+                }
+                },
+                "transactions": {
+                "-O18eCKgIRkGPenotM7G": {
+                    "amount": "4000",
+                    "date": "2024-07-06",
+                    "description": "Habibs money",
+                    "expenseType": "Amma",
+                    "timestamp": 1720296461784,
+                    "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                    "amount": "41700",
+                    "date": "2024-07-01",
+                    "description": "Prep Salary+ prev month savings",
+                    "expenseType": "Savings",
+                    "timestamp": 1720296695582,
+                    "transactionType": "CashIn"
+                }
+                }
+            },
+            "shakhawatt": {
+                "categories": {
+                "-O0z8MQ__d6zBI6TgsQJ": {
+                    "creationDate": "05/07/2024",
+                    "isExpense": false,
+                    "name": "Salary",
+                    "value": "Salary"
+                },
+                "-O0z8TDsrcb92ouGD-ms": {
+                    "creationDate": "05/07/2024",
+                    "isExpense": true,
+                    "name": "Food",
+                    "value": "Food"
+                }
+                },
+                "transactions": {
+                "-O18foiayNWQZf3of_0l": {
+                    "amount": "715",
+                    "date": "2024-07-02",
+                    "description": "Chair + ball",
+                    "expenseType": "Other expense",
+                    "timestamp": 1720296885218,
+                    "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                    "amount": "41700",
+                    "date": "2024-07-01",
+                    "description": "Prep Salary+ prev month savings",
+                    "expenseType": "Savings",
+                    "timestamp": 1720296695582,
+                    "transactionType": "CashIn"
+                }
+                }
+            }
+            }
+        },
+        "prod": {
+            "users": {
+            "shakhawathossain": {
+                "categories": {
+                "-O-eP7h6Dy2vzJjrGbIz": {
+                    "creationDate": "18/06/2024",
+                    "isExpense": true,
+                    "name": "Mess",
+                    "value": "Mess"
+                },
+                "-O-ePA6pz8a0TueAGWG1": {
+                    "creationDate": "18/06/2024",
+                    "isExpense": true,
+                    "name": "Entertainment",
+                    "value": "Entertainment"
+                }
+                },
+                "transactions": {
+                "-O18eCKgIRkGPenotM7G": {
+                    "amount": "4000",
+                    "date": "2024-07-06",
+                    "description": "Habibs money",
+                    "expenseType": "Amma",
+                    "timestamp": 1720296461784,
+                    "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                    "amount": "41700",
+                    "date": "2024-07-01",
+                    "description": "Prep Salary+ prev month savings",
+                    "expenseType": "Savings",
+                    "timestamp": 1720296695582,
+                    "transactionType": "CashIn"
+                }
+                }
+            },
+            "shakhawatt": {
+                "categories": {
+                "-O0z8MQ__d6zBI6TgsQJ": {
+                    "creationDate": "05/07/2024",
+                    "isExpense": false,
+                    "name": "Salary",
+                    "value": "Salary"
+                },
+                "-O0z8TDsrcb92ouGD-ms": {
+                    "creationDate": "05/07/2024",
+                    "isExpense": true,
+                    "name": "Food",
+                    "value": "Food"
+                }
+                },
+                "transactions": {
+                "-O18foiayNWQZf3of_0l": {
+                    "amount": "715",
+                    "date": "2024-07-02",
+                    "description": "Chair + ball",
+                    "expenseType": "Other expense",
+                    "timestamp": 1720296885218,
+                    "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                    "amount": "41700",
+                    "date": "2024-07-01",
+                    "description": "Prep Salary+ prev month savings",
+                    "expenseType": "Savings",
+                    "timestamp": 1720296695582,
+                    "transactionType": "CashIn"
+                }
+                }
+            }
+            }
+        }
+        }
+    3.my db in firebase:
+        {
+        "users": {
+            "shakhawathossain": {
+            "categories": {
+                "-O-eP7h6Dy2vzJjrGbIz": {
+                "creationDate": "18/06/2024",
+                "isExpense": true,
+                "name": "Mess",
+                "value": "Mess"
+                },
+                "-O-ePA6pz8a0TueAGWG1": {
+                "creationDate": "18/06/2024",
+                "isExpense": true,
+                "name": "Entertainment",
+                "value": "Entertainment"
+                }
+            },
+            "transactions": {
+                "-O18eCKgIRkGPenotM7G": {
+                "amount": "4000",
+                "date": "2024-07-06",
+                "description": "Habibs money",
+                "expenseType": "Amma",
+                "timestamp": 1720296461784,
+                "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                "amount": "41700",
+                "date": "2024-07-01",
+                "description": "Prep Salary+ prev month savings",
+                "expenseType": "Savings",
+                "timestamp": 1720296695582,
+                "transactionType": "CashIn"
+                }
+            }
+            },
+            "shakhawatt": {
+            "categories": {
+                "-O0z8MQ__d6zBI6TgsQJ": {
+                "creationDate": "05/07/2024",
+                "isExpense": false,
+                "name": "Salary",
+                "value": "Salary"
+                },
+                "-O0z8TDsrcb92ouGD-ms": {
+                "creationDate": "05/07/2024",
+                "isExpense": true,
+                "name": "Food",
+                "value": "Food"
+                }
+            },
+            "transactions": {
+                "-O18foiayNWQZf3of_0l": {
+                "amount": "715",
+                "date": "2024-07-02",
+                "description": "Chair + ball",
+                "expenseType": "Other expense",
+                "timestamp": 1720296885218,
+                "transactionType": "Expense"
+                },
+                "-O18f5QhHYFc3tf1Bmzn": {
+                "amount": "41700",
+                "date": "2024-07-01",
+                "description": "Prep Salary+ prev month savings",
+                "expenseType": "Savings",
+                "timestamp": 1720296695582,
+                "transactionType": "CashIn"
+                }
+            }
+            }
+        }
+        }
+    4. this is my code base:
+        ================================================================
+        RepopackPy Output File
+        ================================================================
+        Purpose:
+        --------
+        This file contains a packed representation of the entire repository's contents.
+        It is designed to be easily consumable by AI systems for analysis, code review,
+        or other automated processes.
+        File Format:
+        ------------
+        The content is organized as follows:
+        1. This header section
+        2. Repository structure
+        3. Multiple file entries, each consisting of:
+        a. A separator line (================)
+        b. The file path (File: path/to/file)
+        c. Another separator line
+        d. The full contents of the file
+        e. A blank line
+        Usage Guidelines:
+        -----------------
+        1. This file should be treated as read-only. Any changes should be made to the
+        original repository files, not this packed version.
+        2. When processing this file, use the separators and "File:" markers to
+        distinguish between different files in the repository.
+        3. Be aware that this file may contain sensitive information. Handle it with
+        the same level of security as you would the original repository.
+        Notes:
+        ------
+        - Some files may have been excluded based on .gitignore rules and RepopackPy's
+        configuration.
+        - Binary files are not included in this packed representation. Please refer to
+        the Repository Structure section for a complete list of file paths, including
+        binary files.
+        For more information about RepopackPy, visit: https://github.com/abinthomasonline/repopack-py
+        ================================================================
+        Repository Structure
+        ================================================================
+        README.md
+        assets\js\categories\manageCategories.js
+        assets\js\fireBaseConfig.js
+        assets\js\monthStat\monthStat.js
+        assets\js\transactions\CashInList.js
+        assets\js\transactions\addTransaction.js
+        assets\js\transactions\transactionDetails.js
+        assets\js\transactions\transactionList.js
+        category\categoryList.html
+        firebase.json
+        gpt.txt
+        index.html
+        index.js
+        monthStat\monthStat.html
+        package.json
+        test.html
+        test.json
+        test2.html
+        transactions\addTransaction.html
+        transactions\cashInList.html
+        transactions\transactionDetails.html
+        transactions\transactionList.html
+        ================================================================
+        Repository Files
+        ================================================================
+        ================
+        File: firebase.json
+        ================
+        {
+        "hosting": {
+            "public": ".",
+            "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+            ],
+            "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+            ]
+        }
+        }
+        ================
+        File: gpt.txt
+        ================
+        I have a object like below in localstorage as "transactionsTableData" I wanna take the first object which will be the current month data, show it on the index page.
+        there wil be a table where there will be two columns. one for key another for values.  the table should have three rows. wallet, Expenses and Cashin. the wallets value should
+        be the difference of cashin  and expense. refactor the html and create js if need to do this:
+        the object from localstorage:
+        [
+            {
+                "monthYear": "June,2024",
+                "expenses": {
+                    "Entertainment": 129,
+                    "Food": 653,
+                    "food": 10
+                },
+                "cashins": {
+                    "salary": 42000,
+                    "Tuition": 5000
+                }
+            },
+            {
+                "monthYear": "May,2024",
+                "expenses": {
+                    "Outing": 640,
+                    "Transport": 728,
+                    "Food": 1904
+                },
+                "cashins": {}
+            },
+            {
+                "monthYear": "April,2024",
+                "expenses": {
+                    "Food": 767,
+                    "Outing": 2180,
+                    "Home Expense": 173,
+                    "Transport": 891
+                },
+                "cashins": {
+                    "Loan Payback": 600
+                }
+            }
+        ]
+        the index page:
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>Main Menu</title>
+            <!-- Bootstrap 5 CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom CSS -->
+            <style>
+                body, html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+            </style>
+        </head>
+        <body>
+        <div class="container border">
+            <div class="container mt-5">
+                <div class="text-center">
+                    <h1 class="mt-4 mb-3">Expense Tracker</h1>
+                </div>
+            </div>
+            <div class="row row-cols-2 g-3">
+                <div class="col">
+                    <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
+                </div>
+                <div class="col">
+                    <a type="button" class="btn btn-info w-100">Sadqah</a>
+                </div>
+            </div>
+        </div>
+            <script>
+                    const tableData = JSON.parse(localStorage.getItem('transactionsTable'));
+                    console.log(tableData);
+            </script>
+        <!-- Bootstrap 5 JS and dependencies -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+        <!-- Custom JS -->
+        </body>
+        </html>
+        ================
+        File: index.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Main Menu</title>
+            <!-- Bootstrap 5 CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom CSS -->
+            <style>
+                body, html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+            </style>
+        </head>
+        <body>
+        <div class="container border">
+            <div class="container mt-5">
+                <div class="text-center">
+                    <h1 class="mt-4 mb-3">Expense Tracker</h1>
+                </div>
+            </div>
+            <div class="row row-cols-2 g-3">
+                <div class="col">
+                    <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
+                </div>
+                <div class="col">
+                    <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
+                </div>
+                <div class="col">
+                    <a type="button" class="btn btn-info w-100">Sadqah</a>
+                </div>
+            </div>
+        </div>
+        <div class="container border mt-5">
+            <div class="text-center">
+                <h2 class="mt-4 mb-3" id="SummaryLabel">Current Month Summary</h2>
+            </div>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="currentMonthTable">
+                    <tr>
+                        <td>Wallet</td>
+                        <td id="walletValue"></td>
+                    </tr>
+                    <tr>
+                        <td>Expenses</td>
+                        <td id="expensesValue"></td>
+                    </tr>
+                    <tr>
+                        <td>Cashin</td>
+                        <td id="cashinValue"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const tableData = JSON.parse(localStorage.getItem('transactionsTableData'));
+                // console.log(tableData)
+                if (tableData && tableData.length > 0) {
+                    const currentMonthData = tableData[0]; // First object which is the current month data
+                    const { expenses, cashins,monthYear } = currentMonthData;
+                    document.getElementById('SummaryLabel').textContent= monthYear+ " Sumamry"
+                    // console.log(monthYear)
+                    // Calculate total expenses and total cashin
+                    const totalExpenses = Object.values(expenses).reduce((acc, value) => acc + value, 0);
+                    const totalCashin = Object.values(cashins).reduce((acc, value) => acc + value, 0);
+                    // Calculate wallet value
+                    const walletValue = totalCashin - totalExpenses;
+                    // Set the values in the table
+                    document.getElementById('walletValue').textContent = `${walletValue} Tk`;
+                    document.getElementById('expensesValue').textContent = `${totalExpenses} Tk`;
+                    document.getElementById('cashinValue').textContent = `${totalCashin} Tk`;
+                } else {
+                    // Handle case when there is no data
+                    document.getElementById('currentMonthTable').innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+                }
+            });
+        </script>
+        <!-- Bootstrap 5 JS and dependencies -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+        <!-- Custom JS -->
+        </body>
+        </html>
+        ================
+        File: index.js
+        ================
+        function fetchTransactions() {
+            const userId = 'Shakhwatt';
+            const transactionsRef = ref(getDatabase(), `users/${userId}/transactions`);
+            onValue(transactionsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const tbody = document.querySelector('#listTable tbody');
+                    tbody.innerHTML = '';
+                    const transactionsArray = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                    transactionsArray.forEach(transaction => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${formatDate(transaction.date)}</td>
+                                        <td>${transaction.expenseType}</td>
+                                        <td>${transaction.description}</td>
+                                        <td>${transaction.amount}Tk</td>`;
+                        row.addEventListener('click', () => {
+                            window.location.href = 'transactiondetails.html?id=' + transaction.id;
+                        });
+                        tbody.appendChild(row);
+                    });
+                }
+            }, { onlyOnce: true });
+        }
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
+            return `${day}${getOrdinal(day)} ${month}, ${year}`;
+        }
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+        function loadHtml(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById(elementId).innerHTML = html;
+                    if (callback) {
+                        callback();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading the HTML: ', error);
+                    document.getElementById(elementId).innerHTML = "<p>Error loading content. Please try again later.</p>";
+                });
+        }
+        document.getElementById('loadView1').addEventListener('click', () => loadHtml('index.html', 'content'));
+        document.getElementById('loadView2').addEventListener('click', () => loadHtml('transactions/transactionList.html', 'content'));
+        document.getElementById('loadView3').addEventListener('click', () => loadHtml('test2.html', 'content'));
+        // Load Transaction List and initiate fetching transactions
+        document.getElementById('loadView3').addEventListener('click', () => {
+            loadHtml('transactions/transactionList.html', 'content', () => {
+                // Ensure fetchTransactions() is defined and callable
+                if (typeof fetchTransactions === "function") {
+                    fetchTransactions();
+                }
+            });
+        });
+        ================
+        File: package.json
+        ================
+        {
+        "name": "expensetracker",
+        "version": "1.0.0",
+        "description": "this will be expenseTracker App for my personal use",
+        "main": "index.js",
+        "scripts": {
+            "test": "echo \"Error: no test specified\" && exit 1"
+        },
+        "author": "",
+        "license": "ISC",
+        "dependencies": {
+            "firebase": "^10.12.3"
+        }
+        }
+        ================
+        File: README.md
+        ================
+        # ExpenseTracker
+        this will be expenseTracker App for my personal use
+        ================
+        File: test.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Dynamic Page Loader</title>
+            <!-- Bootstrap CSS -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container mt-5">
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button type="button" class="btn btn-primary" id="loadView1">Load View 1</button>
+                    <button type="button" class="btn btn-secondary" id="loadView2">Load View 2</button>
+                    <button type="button" class="btn btn-success" id="loadView3">Load View 3</button>
+                </div>
+                <div id="content" class="mt-4 p-3 border rounded">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+            <!-- Bootstrap Bundle with Popper -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="index.js"></script>
+        </body>
+        </html>
+        ================
+        File: test.json
+        ================
+        {
+            "users": {
+                "shakhwat": {
+                    "site1":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    },
+                    "site2":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    },
+                    "site3":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    }
+                },
+                "Taspia": {
+                    "site1":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    },
+                    "site2":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    },
+                    "site3":{
+                        "sideId": "facebook.com",
+                        "username": "shakhwat01",
+                        "Password": "101010"
+                    }
+                }
+            }
+        }
+        ================
+        File: test2.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>Transaction List</title>
+            <!-- Bootstrap CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom styles -->
+            <style>
+                html, body {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+                #listContainer {
+                    height: 700px;
+                    overflow-y: auto;
+                }
+                table {
+                    width: 100%;
+                    table-layout: fixed;
+                    border-collapse: collapse;
+                }
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #f8f9fa;
+                    z-index: 10;
+                }
+                th, td {
+                    height: 50px;
+                    text-align: center;
+                    vertical-align: middle;
+                    word-wrap: break-word;
+                    border: 1px solid #dee2e6;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Transaction List</h1>
+            </div>
+            <div id="listContainer" class="container border">
+                <table class="table table-striped" id="listTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+                </div>
+            </div>
+            <!-- Bootstrap JS -->
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+            <!-- Firebase database -->
+            <script src="https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js"></script>
+            <script src="assets/js/fireBaseConfig.js"></script>
+            <script>
+                function fetchTransactions() {
+                    const userId = 'Shakhawatt';
+                    const transactionsRef = ref(getDatabase(), `users/${userId}/transactions`);
+                    onValue(transactionsRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            const tbody = document.querySelector('#listTable tbody');
+                            tbody.innerHTML = '';
+                            const transactionsArray = Object.keys(data).map(key => ({
+                                id: key,
+                                ...data[key]
+                            })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                            transactionsArray.forEach(transaction => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `<td>${formatDate(transaction.date)}</td>
+                                                <td>${transaction.expenseType}</td>
+                                                <td>${transaction.description}</td>
+                                                <td>${transaction.amount}Tk</td>`;
+                                row.addEventListener('click', () => {
+                                    window.location.href = 'transactiondetails.html?id=' + transaction.id;
+                                });
+                                tbody.appendChild(row);
+                            });
+                        }
+                    }, { onlyOnce: true });
+                }
+                function formatDate(dateString) {
+                    const date = new Date(dateString);
+                    const day = date.getDate();
+                    const month = date.toLocaleString('default', { month: 'long' });
+                    const year = date.getFullYear();
+                    return `${day}${getOrdinal(day)} ${month}, ${year}`;
+                }
+                function getOrdinal(n) {
+                    const s = ["th", "st", "nd", "rd"];
+                    const v = n % 100;
+                    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                }
+                fetchTransactions();
+            </script>
+        </body>
+        </html>
+        ================
+        File: assets\js\fireBaseConfig.js
+        ================
+        // firebaseConfig.js
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyANYk0LlxsQwGTaw-u4y9EzALsGLjFXPcE",
+            authDomain: "expensetrackerv1-690e6.firebaseapp.com",
+            projectId: "expensetrackerv1-690e6",
+            storageBucket: "expensetrackerv1-690e6.appspot.com",
+            messagingSenderId: "674219928023",
+            appId: "1:674219928023:web:724532785517ad65758392",
+            measurementId: "G-DH4X850KP0",
+            databaseURL: "https://expensedev-406a0-default-rtdb.firebaseio.com",
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        export { db };
+        ================
+        File: assets\js\categories\manageCategories.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        document.addEventListener('DOMContentLoaded', function () {
+            const categoryTableBody = document.getElementById('categoryTableBody');
+            const addCategoryForm = document.getElementById('addCategoryForm');
+            const categoryNameInput = document.getElementById('categoryName'); // Input for category name
+            const addCategoryModal = new bootstrap.Modal(document.getElementById('addCategoryModal')); // Bootstrap modal instance
+            const userId = 'shakhawatt';  // Define the user ID here or retrieve from user authentication session
+            addCategoryForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const categoryName = categoryNameInput.value;
+                const isExpense = false; // Get the state of the checkbox
+                if (categoryName) {
+                    const newCategoryRef = push(ref(db, `users/${userId}/categories`));
+                    set(newCategoryRef, {
+                        name: categoryName,
+                        value: categoryName,
+                        isExpense: isExpense, // Set the isExpense value based on checkbox
+                        creationDate: new Date().toLocaleDateString("en-GB")
+                    }).then(() => {
+                        addCategoryModal.hide(); // Properly hide the modal using Bootstrap's method
+                        categoryNameInput.value = ''; // Clear the input field after adding
+                        alert("Category added successfully!");
+                    }).catch(error => {
+                        alert("Failed to add category: " + error.message);
+                    });
+                }
+            });
+            // Load and display categories
+            onValue(ref(db, `users/${userId}/categories`), (snapshot) => {
+                const data = snapshot.val();
+                // console.log(data);
+                localStorage.setItem('categoriesOnDb', JSON.stringify(data));
+                categoryTableBody.innerHTML = '';
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const category = data[key];
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <span class="category-name">${category.name}</span>
+                                <input type="text" class="form-control edit-field" value="${category.name}">
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-check-input is-expense-checkbox" ${category.isExpense ? 'checked' : ''}>
+                            </td>
+                            <td>
+                                <button class="btn edit-btn"><i class="bi bi-pencil"></i></button>
+                                <button class="btn save-btn" style="display:none;"><i class="bi bi-check-lg"></i></button>
+                            </td>
+                            <td>
+                                <button class="btn delete-btn"><i class="bi bi-trash"></i></button>
+                            </td>
+                        `;
+                        attachEventListeners(row, key);
+                        categoryTableBody.appendChild(row);
+                    });
+                }
+            }, {
+                onlyOnce: false  // Set to false for real-time updates
+            });
+            function attachEventListeners(row, key) {
+                const editBtn = row.querySelector('.edit-btn');
+                const saveBtn = row.querySelector('.save-btn');
+                const deleteBtn = row.querySelector('.delete-btn');
+                const categoryName = row.querySelector('.category-name');
+                const editField = row.querySelector('.edit-field');
+                const isExpenseCheckbox = row.querySelector('.is-expense-checkbox');
+                isExpenseCheckbox.addEventListener('change', () => {
+                    update(ref(db, `users/${userId}/categories/${key}`), { isExpense: isExpenseCheckbox.checked }).catch(error => {
+                        alert("Failed to update expense status: " + error.message);
+                        isExpenseCheckbox.checked = !isExpenseCheckbox.checked; // Revert the checkbox if the update fails
+                    });
+                });
+                editBtn.addEventListener('click', () => {
+                    categoryName.style.display = 'none';
+                    editField.style.display = 'block';
+                    editBtn.style.display = 'none';
+                    saveBtn.style.display = 'block';
+                });
+                saveBtn.addEventListener('click', () => {
+                    const updatedName = editField.value;
+                    update(ref(db, `users/${userId}/categories/${key}`), { name: updatedName, value: updatedName }).then(() => {
+                        categoryName.textContent = updatedName;
+                        categoryName.style.display = 'block';
+                        editField.style.display = 'none';
+                        editBtn.style.display = 'block';
+                        saveBtn.style.display = 'none';
+                    }).catch(error => {
+                        alert("Failed to update category: " + error.message);
+                    });
+                });
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm("Are you sure you want to delete this category?")) {
+                        remove(ref(db, `users/${userId}/categories/${key}`)).then(() => {
+                            row.remove();
+                        }).catch(error => {
+                            alert("Failed to delete category: " + error.message);
+                        });
+                    }
+                });
+            }
+        });
+        ================
+        File: assets\js\monthStat\monthStat.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        // Function to format date as "17th June, 2024"
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
+            return `${getOrdinal(day)} ${month}, ${year}`;
+        }
+        // Helper function to get the ordinal suffix for a day
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+        function fetchTransactions() {
+            const userId = 'shakhawatt'; // Your user ID
+            const transactionsRef = ref(db, `users/${userId}/transactions`);
+            onValue(transactionsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const listContainer = document.querySelector('#listContainer');
+                    listContainer.innerHTML = ''; // Clear existing content
+                    // Convert object to array, sort by date in descending order
+                    const transactionsArray = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date)); // Sorting in descending order
+                    const monthData = {};
+                    transactionsArray.forEach(transaction => {
+                        const monthYear = getMonthYear(transaction.date);
+                        if (!monthData[monthYear]) monthData[monthYear] = { expenses: {}, cashins: {} };
+                        const type = transaction.expenseType;
+                        if (transaction.transactionType === 'Expense') {
+                            if (!monthData[monthYear].expenses[type]) monthData[monthYear].expenses[type] = 0;
+                            monthData[monthYear].expenses[type] += parseFloat(transaction.amount);
+                        } else if (transaction.transactionType === 'CashIn') {
+                            if (!monthData[monthYear].cashins[type]) monthData[monthYear].cashins[type] = 0;
+                            monthData[monthYear].cashins[type] += parseFloat(transaction.amount);
+                        }
+                    });
+                    // Convert monthData object to array and sort in descending order of monthYear
+                    const sortedMonthData = Object.keys(monthData).sort((a, b) => new Date(b.split(',')[1], new Date(a.split(',')[0]).getMonth()) - new Date(a.split(',')[1], new Date(b.split(',')[0]).getMonth()));
+                    // Save the sorted month data to local storage
+                    saveToLocalStorage(sortedMonthData, monthData);
+                    sortedMonthData.forEach(monthYear => {
+                        const data = monthData[monthYear];
+                        // Create Expense Table
+                        const expenseTable = document.createElement('table');
+                        expenseTable.className = 'table table-striped';
+                        expenseTable.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th colspan="2" style="text-align:center; font-weight:bold; background-color: #f8d7da;">${monthYear} - Expenses</th>
+                                </tr>
+                                <tr>
+                                    <th>Expense Type</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        const expenseTbody = expenseTable.querySelector('tbody');
+                        let expenseTotal = 0;
+                        for (const [type, total] of Object.entries(data.expenses)) {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>${type}</td><td>${total.toFixed(2)}Tk</td>`;
+                            expenseTbody.appendChild(row);
+                            expenseTotal += total;
+                        }
+                        const expenseTotalRow = document.createElement('tr');
+                        expenseTotalRow.innerHTML = `<td style="text-align:right; font-weight:bold;">Total:</td><td>${expenseTotal.toFixed(2)}Tk</td>`;
+                        expenseTbody.appendChild(expenseTotalRow);
+                        // Create CashIn Table
+                        const cashinTable = document.createElement('table');
+                        cashinTable.className = 'table table-striped';
+                        cashinTable.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th colspan="2" style="text-align:center; font-weight:bold; background-color: #d4edda;">${monthYear} - CashIn</th>
+                                </tr>
+                                <tr>
+                                    <th>Expense Type</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        const cashinTbody = cashinTable.querySelector('tbody');
+                        let cashinTotal = 0;
+                        for (const [type, total] of Object.entries(data.cashins)) {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>${type}</td><td>${total.toFixed(2)}Tk</td>`;
+                            cashinTbody.appendChild(row);
+                            cashinTotal += total;
+                        }
+                        const cashinTotalRow = document.createElement('tr');
+                        cashinTotalRow.innerHTML = `<td style="text-align:right; font-weight:bold;">Total:</td><td>${cashinTotal.toFixed(2)}Tk</td>`;
+                        cashinTbody.appendChild(cashinTotalRow);
+                        // Append both tables to the container
+                        listContainer.appendChild(expenseTable);
+                        listContainer.appendChild(cashinTable);
+                    });
+                }
+            }, {
+                onlyOnce: true
+            });
+        }
+        // Function to save data to local storage
+        function saveToLocalStorage(sortedMonthData, monthData) {
+            // localStorage.removeItem('transactionsTableData');
+            const tableData = sortedMonthData.map(monthYear => {
+                const expenses = monthData[monthYear].expenses;
+                const cashins = monthData[monthYear].cashins;
+                return {
+                    monthYear,
+                    expenses,
+                    cashins
+                };
+            });
+            console.log( JSON.stringify(tableData))
+            localStorage.setItem('transactionsTableData', JSON.stringify(tableData));
+        }
+        // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+        // Helper function to get "Month, Year" from a date string
+        function getMonthYear(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+        }
+        // Call the function to fetch transactions when the script loads
+        fetchTransactions();
+        ================
+        File: assets\js\transactions\addTransaction.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        const expenseForm = document.getElementById('expenseForm');
+        const expenseTypeSelect = document.getElementById('expenseType');
+        const transactionTypeSelect = document.getElementById('transactionType');
+        const transactionLabel = document.getElementById('transactionLabel');
+        const userId = 'shakhawatt';  // Define the user ID here or retrieve from user authentication session
+        // Handle transaction type change
+        transactionTypeSelect.addEventListener('change', () => {
+            // console.log("triggerd");
+            expenseTypeSelect.value = "";
+            transactionLabel.textContent = `${transactionTypeSelect.value} Type`;
+            updateExpenseOptions(transactionTypeSelect.value);
+        });
+        // Fetch and filter categories based on transaction type
+        function updateExpenseOptions(transactionType) {
+            onValue(ref(db, `users/${userId}/categories`), (snapshot) => {
+                const categories = snapshot.val();
+                expenseTypeSelect.innerHTML = '';
+                if (categories) {
+                    console.log(transactionType);
+                    Object.keys(categories).forEach(key => {
+                        const category = categories[key];
+                        console.log(category);
+                        if (transactionType === 'Expense' && category.isExpense) {
+                            const option = document.createElement('option');
+                            option.value = category.value;
+                            option.textContent = category.name;
+                            expenseTypeSelect.appendChild(option);
+                        } else if (transactionType === 'CashIn' && !category.isExpense) {
+                            const option = document.createElement('option');
+                            option.value = category.value;
+                            option.textContent = category.name;
+                            expenseTypeSelect.appendChild(option);
+                        }
+                    });
+                }
+            });
+        }
+        // Handle form submission
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const transactionType = transactionTypeSelect.value;
+            const expenseType = expenseTypeSelect.value;
+            const amount = document.getElementById('amount').value;
+            const description = document.getElementById('description').value;
+            const date = document.getElementById('date').value;
+            const newTransactionRef = push(ref(db, `users/${userId}/transactions`));
+            set(newTransactionRef, {
+                transactionType: transactionType,
+                expenseType: expenseType,
+                amount: amount,
+                description: description,
+                date: date,
+                timestamp: Date.now()
+            }).then(() => {
+                alert(`${transactionType} successfully added!`);
+            }).catch((error) => {
+                console.error('Error adding transaction: ', error);
+                alert('Failed to add transaction. Please try again.');
+            });
+        });
+        ================
+        File: assets\js\transactions\CashInList.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        // Function to format date as "17th June, 2024"
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
+            return `${getOrdinal(day)} ${month}, ${year}`;
+        }
+        // Helper function to get the ordinal suffix for a day
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+        function fetchTransactions() {
+            const userId = 'shakhawatt'; // Your user ID
+            const transactionsRef = ref(db, `users/${userId}/transactions`);
+            onValue(transactionsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const tbody = document.querySelector('#listTable tbody');
+                    tbody.innerHTML = ''; // Clear existing rows
+                    // Convert object to array, sort by date in descending order
+                    const transactionsArray = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date));  // Sorting in descending order
+                    let lastMonthYear = '';
+                    let monthlyTotal = 0;
+                    transactionsArray.forEach((transaction, index, array) => {
+                        if(transaction.transactionType ==='CashIn'){
+                            const formattedDate = formatDate(transaction.date);
+                            const monthYear = getMonthYear(transaction.date);
+                            console.log(transaction)
+                            // Check if it's a new month and year, or last transaction
+                            if (monthYear !== lastMonthYear || index === array.length - 1) {
+                                if (lastMonthYear) { // Not the first transaction, put the total row for the previous month
+                                    const monthRowTotal = document.createElement('tr');
+                                    monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                                    tbody.appendChild(monthRowTotal);
+                                }
+                                // Reset monthly total for new month and set new lastMonthYear
+                                monthlyTotal = 0;
+                                lastMonthYear = monthYear;
+                                // Add month heading for new month
+                                const monthRow = document.createElement('tr');
+                                monthRow.innerHTML = `<td colspan="4" style="text-align:center; font-weight:bold; background-color: #f8f9fa;">${monthYear}</td>`;
+                                tbody.appendChild(monthRow);
+                            }
+                            // Aggregate monthly total
+                            monthlyTotal += parseFloat(transaction.amount || 0);
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${formattedDate}</td>
+                                <td>${transaction.expenseType || ''}</td>
+                                <td>${transaction.description || ''}</td>
+                                <td>${transaction.amount || ''}Tk</td>
+                            `;
+                            row.addEventListener('click', () => {
+                                window.location.href = 'transactionDetails.html?id=' + transaction.id;
+                            });
+                            tbody.appendChild(row);
+                        }
+                    });
+                    // Add total row for last month in the list if not added
+                    if (monthlyTotal > 0) {
+                        const monthRowTotal = document.createElement('tr');
+                        monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                        tbody.appendChild(monthRowTotal);
+                    }
+                }
+            }, {
+                onlyOnce: true
+            });
+        }
+        // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+        // Helper function to get "Month, Year" from a date string
+        function getMonthYear(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+        }
+        // Call the function to fetch transactions when the script loads
+        fetchTransactions();
+        ================
+        File: assets\js\transactions\transactionDetails.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { ref, onValue, update,set  } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        function populateOptions(filterExpense) {
+            const selectElement = document.getElementById('expenseType');
+            const data = JSON.parse(localStorage.getItem('categoriesOnDb'));
+            // console.log(data);
+            // console.log(filterExpense);
+            var isExpnese =  filterExpense == "Expense" ? true: false ;
+            // Clear existing options except the first "Select" option
+            selectElement.length = 1;
+            // Iterate through each key in the data object
+            for (const key in data) {
+                const item = data[key];
+                // Check the isExpense property based on the filterExpense parameter
+                if (item.isExpense === isExpnese) {
+                    // Create a new option element
+                    const option = new Option(item.name, item.value);
+                    // Append the option to the select element
+                    selectElement.add(option);
+                }
+            }
+        }
+        function fetchTransactionDetails(transactionId) {
+            const userId = 'shakhawatt';
+            const transactionRef = ref(db, `users/${userId}/transactions/${transactionId}`);
+            onValue(transactionRef, (snapshot) => {
+                const data = snapshot.val();
+                // console.log(data);
+                populateOptions(data.transactionType);
+                if (data) {
+                    document.getElementById('transactionType').value = data.transactionType || '';
+                    document.getElementById('expenseType').value = data.expenseType || '';
+                    document.getElementById('amount').value = data.amount || '';
+                    document.getElementById('date').value = data.date || '';
+                    document.getElementById('description').textContent = data.description || '';
+                }
+            }, {
+                onlyOnce: true
+            });
+        }
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const transactionId = getQueryParam('id');
+            const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
+            const updatedData = {
+                expenseType: document.getElementById('expenseType').value,
+                amount: document.getElementById('amount').value,
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value
+            };
+            update(transactionRef, updatedData).then(() => {
+                alert('Transaction successfully updated!');
+            }).catch((error) => {
+                console.error('Error updating transaction: ', error);
+                alert('Failed to update transaction. Please try again.');
+            });
+        });
+        document.getElementById('deleteBtn').addEventListener('click', function() {
+            const transactionId = getQueryParam('id');
+            const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
+            // Use set() with null to remove data in Firebase 9.x
+            set(transactionRef, null).then(() => {
+                alert('Transaction successfully deleted!');
+                window.location.href = 'transactionList.html'; // Redirect to transaction list after deletion
+            }).catch((error) => {
+                console.error('Error deleting transaction: ', error);
+                alert('Failed to delete transaction. Please try again.');
+            });
+        });
+        const transactionId = getQueryParam('id');
+        if (transactionId) {
+            fetchTransactionDetails(transactionId);
+        } else {
+            alert('No transaction ID provided.');
+        }
+        ================
+        File: assets\js\transactions\transactionList.js
+        ================
+        import { db } from "../fireBaseConfig.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+        // Function to format date as "17th June, 2024"
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
+            return `${getOrdinal(day)} ${month}, ${year}`;
+        }
+        // Helper function to get the ordinal suffix for a day
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+        function fetchTransactions() {
+            const userId = 'shakhawatt'; // Your user ID
+            const transactionsRef = ref(db, `users/${userId}/transactions`);
+            onValue(transactionsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const tbody = document.querySelector('#listTable tbody');
+                    tbody.innerHTML = ''; // Clear existing rows
+                    // Convert object to array, sort by date in descending order
+                    const transactionsArray = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date));  // Sorting in descending order
+                    let lastMonthYear = '';
+                    let monthlyTotal = 0;
+                    transactionsArray.forEach((transaction, index, array) => {
+                        if(transaction.transactionType ==='Expense'){
+                            const formattedDate = formatDate(transaction.date);
+                            const monthYear = getMonthYear(transaction.date);
+                            // console.log(transaction)
+                            // Check if it's a new month and year, or last transaction
+                            if (monthYear !== lastMonthYear || index === array.length - 1) {
+                                if (lastMonthYear) { // Not the first transaction, put the total row for the previous month
+                                    const monthRowTotal = document.createElement('tr');
+                                    monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                                    tbody.appendChild(monthRowTotal);
+                                }
+                                // Reset monthly total for new month and set new lastMonthYear
+                                monthlyTotal = 0;
+                                lastMonthYear = monthYear;
+                                // Add month heading for new month
+                                const monthRow = document.createElement('tr');
+                                monthRow.innerHTML = `<td colspan="4" style="text-align:center; font-weight:bold; background-color: #f8f9fa;">${monthYear}</td>`;
+                                tbody.appendChild(monthRow);
+                            }
+                            // Aggregate monthly total
+                            monthlyTotal += parseFloat(transaction.amount || 0);
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${formattedDate}</td>
+                                <td>${transaction.expenseType || ''}</td>
+                                <td>${transaction.description || ''}</td>
+                                <td>${transaction.amount || ''}Tk</td>
+                            `;
+                            row.addEventListener('click', () => {
+                                window.location.href = 'transactionDetails.html?id=' + transaction.id;
+                            });
+                            tbody.appendChild(row);
+                        }
+                    });
+                    // Add total row for last month in the list if not added
+                    if (monthlyTotal > 0) {
+                        const monthRowTotal = document.createElement('tr');
+                        monthRowTotal.innerHTML = `<td colspan="3" style="text-align:right; font-weight:bold;">Total for ${lastMonthYear}:</td><td>${monthlyTotal}Tk</td>`;
+                        tbody.appendChild(monthRowTotal);
+                    }
+                }
+            }, {
+                onlyOnce: true
+            });
+        }
+        // Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
+        // Helper function to get "Month, Year" from a date string
+        function getMonthYear(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
+        }
+        // Call the function to fetch transactions when the script loads
+        fetchTransactions();
+        ================
+        File: category\categoryList.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Manage Categories</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+            <style>
+                body, html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+                .edit-field {
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container mt-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <h2>Categories</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal"><i class="bi bi-plus-lg"></i></button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Is Expense</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryTableBody">
+                        <!-- Categories will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Modal for Adding New Category -->
+            <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addCategoryForm">
+                                <div class="mb-3">
+                                    <label for="categoryName" class="form-label">Category Name</label>
+                                    <input type="text" class="form-control" id="categoryName" required>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Add Category</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+                </div>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+            <script src="https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js" type="module"></script>
+            <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+            <script src="../assets/js/categories/manageCategories.js" type="module"></script>
+        </body>
+        </html>
+        ================
+        File: monthStat\monthStat.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Transaction List</title>
+            <!-- Bootstrap 5 CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom CSS -->
+            <style>
+                body,
+                html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+                #listContainer {
+                    height: 700px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                }
+                table {
+                    width: 100%;
+                    height: auto;
+                    table-layout: fixed;
+                    border-collapse: collapse;
+                }
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #f8f9fa; /* Light gray background */
+                    z-index: 10;
+                }
+                th,td {
+                    height: 50px; /* Set the height of cells */
+                    width: 50px; /* Make cell width span the full width of the table */
+                    text-align: center; /* Center text horizontally */
+                    vertical-align: middle; /* Center text vertically */
+                    word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                    overflow-wrap: break-word;
+                    border: 1px solid #dee2e6;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Month Stats</h1>
+            </div>
+            <div id="listContainer" class="container border">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+                </div>
+            </div>
+            <!-- Bootstrap 5 JS and dependencies -->
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+            <!-- Custom JS -->
+            <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+            <script src="../assets/js/monthStat/monthStat.js" type="module"></script>
+        </body>
+        </html>
+        ================
+        File: transactions\addTransaction.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Add Transaction</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+            <style>
+                body, html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+            </style>
+        </head>
+        <body>
+        <div class="container border">
+            <h1 class="mt-4 mb-3">Add Transaction</h1>
+            <form id="expenseForm">
+                <div class="mb-3">
+                    <label for="transactionType" class="form-label">Transaction Type</label>
+                    <select class="form-select" id="transactionType">
+                        <option value="">Select</option>
+                        <option value="Expense">Expense</option>
+                        <option value="CashIn">CashIn</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="expenseType" id="transactionLabel" class="form-label">Expense Type</label>
+                    <select class="form-select" id="expenseType">
+                        <option value="">Select</option>
+                        <!-- Dynamically loaded categories will appear here -->
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+                </div>
+                <div class="mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date">
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" rows="3" placeholder="Enter description"></textarea>
+                </div>
+                <div class="container mt-5">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Add Transaction</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a type="button" href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+        <script src="../assets/js/transactions/addTransaction.js" type="module"></script>
+        <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+        </body>
+        </html>
+        ================
+        File: transactions\cashInList.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Transaction List</title>
+            <!-- Bootstrap 5 CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom CSS -->
+            <style>
+                body,
+                html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+                #listContainer {
+                    height: 700px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                }
+                table {
+                    width: 100%;
+                    height: auto;
+                    table-layout: fixed;
+                    border-collapse: collapse;
+                }
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #f8f9fa; /* Light gray background */
+                    z-index: 10;
+                }
+                th,td {
+                    height: 50px; /* Set the height of cells */
+                    width: 50px; /* Make cell width span the full width of the table */
+                    text-align: center; /* Center text horizontally */
+                    vertical-align: middle; /* Center text vertically */
+                    word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                    overflow-wrap: break-word;
+                    border: 1px solid #dee2e6;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Transaction List</h1>
+            </div>
+            <div id="listContainer" class="container border">
+                <table id="listTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Desc</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+                </div>
+            </div>
+            <!-- Bootstrap 5 JS and dependencies -->
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+            <!-- Custom JS -->
+            <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+            <script src="../assets/js/transactions/CashInList.js" type="module"></script>
+        </body>
+        </html>
+        ================
+        File: transactions\transactionDetails.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Transaction Details</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+            <style>
+                body,
+                html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container border">
+                <h1 class="mt-4 mb-3">Edit Transaction Details</h1>
+                <form id="transactionForm">
+                    <div class="mb-3">
+                        <label for="transactionType" class="form-label">Transaction Type</label>
+                        <select class="form-select" id="transactionType">
+                            <option value="">Select</option>
+                            <option value="Expense">Expense</option>
+                            <option value="CashIn">CashIn</option>
+                        </select>
+                        <label for="expenseType" class="form-label">Expense Type</label>
+                        <select class="form-select" id="expenseType">
+                            <option value="">Select</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="Enter description"></textarea>
+                    </div>
+                    <div class="mb-3 text-center">
+                        <button type="submit" class="btn btn-primary">Update Transaction</button>
+                        <button type="button" id="deleteBtn" class="btn btn-danger">Delete Transaction</button>
+                    </div>
+                </form>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="transactionList.html" class="btn btn-info ">Back to List</a>
+                    <a href="../index.html" class="btn btn-warning ">Back to Menu</a>
+                </div>
+            </div>
+            <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+            <script src="../assets/js/transactions/transactionDetails.js" type="module"></script>
+        </body>
+        </html>
+        ================
+        File: transactions\transactionList.html
+        ================
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+            <title>Transaction List</title>
+            <!-- Bootstrap 5 CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+                integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+            <!-- Custom CSS -->
+            <style>
+                body,
+                html {
+                    height: 100%;
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                .container {
+                    max-width: 1080px;
+                    margin: auto;
+                    padding: 10px;
+                }
+                #listContainer {
+                    height: 700px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                }
+                table {
+                    width: 100%;
+                    height: auto;
+                    table-layout: fixed;
+                    border-collapse: collapse;
+                }
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #f8f9fa; /* Light gray background */
+                    z-index: 10;
+                }
+                th,td {
+                    height: 50px; /* Set the height of cells */
+                    width: 50px; /* Make cell width span the full width of the table */
+                    text-align: center; /* Center text horizontally */
+                    vertical-align: middle; /* Center text vertically */
+                    word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                    overflow-wrap: break-word;
+                    border: 1px solid #dee2e6;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <h1 class="mt-4 mb-3">Transaction List</h1>
+            </div>
+            <div id="listContainer" class="container border">
+                <table id="listTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Desc</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+                </div>
+            </div>
+            <!-- Bootstrap 5 JS and dependencies -->
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+            <!-- Custom JS -->
+            <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+            <script src="../assets/js/transactions/transactionList.js" type="module"></script>
+        </body>
+        </html>
+    ================
+    File: README.md
+    ================
+    # expense-app-v2
+    ================
+    File: sampleData/expensetrackerv1-690e6-default-rtdb-export.json
+    ================
+    {
+    "users": {
+        "shakhawathossain": {
+        "categories": {
+            "-O-eP7h6Dy2vzJjrGbIz": {
+            "creationDate": "18/06/2024",
+            "isExpense": true,
+            "name": "Mess",
+            "value": "Mess"
+            },
+            "-O-ePA6pz8a0TueAGWG1": {
+            "creationDate": "18/06/2024",
+            "isExpense": true,
+            "name": "Entertainment",
+            "value": "Entertainment"
+            },
+            "-O-ePCHHHQfl3KPS3Xk1": {
+            "creationDate": "18/06/2024",
+            "isExpense": true,
+            "name": "Food",
+            "value": "Food"
+            },
+            "-O-ePKbCyX5iUfkpjBmx": {
+            "creationDate": "18/06/2024",
+            "isExpense": true,
+            "name": "Outing",
+            "value": "Outing"
+            },
+            "-O-ePS1gtAYr4vG2egMI": {
+            "creationDate": "18/06/2024",
+            "isExpense": true,
+            "name": "Home Expense",
+            "value": "Home Expense"
+            },
+            "-O0EFfk2GOYsENgBE3K-": {
+            "creationDate": "25/06/2024",
+            "isExpense": false,
+            "name": "salary",
+            "value": "salary"
+            },
+            "-O0FadlOC_DgOtGjOQR4": {
+            "creationDate": "26/06/2024",
+            "isExpense": false,
+            "name": "Tuition",
+            "value": "Tuition"
+            },
+            "-O0FahfZwVoWc5oG2GxC": {
+            "creationDate": "26/06/2024",
+            "isExpense": false,
+            "name": "Loan Payback",
+            "value": "Loan Payback"
+            },
+            "-O0FalaJ51S-0DKsTXzV": {
+            "creationDate": "26/06/2024",
+            "isExpense": false,
+            "name": "Bonus",
+            "value": "Bonus"
+            }
+        },
+        "transactions": {
+            "-O18eCKgIRkGPenotM7G": {
+            "amount": "4000",
+            "date": "2024-07-06",
+            "description": "Habibs money",
+            "expenseType": "Amma",
+            "timestamp": 1720296461784,
+            "transactionType": "Expense"
+            },
+            "-O18f5QhHYFc3tf1Bmzn": {
+            "amount": "41700",
+            "date": "2024-07-01",
+            "description": "Prep Salary+ prev month savings",
+            "expenseType": "Savings",
+            "timestamp": 1720296695582,
+            "transactionType": "CashIn"
+            },
+            "-O18foiayNWQZf3of_0l": {
+            "amount": "715",
+            "date": "2024-07-02",
+            "description": "Chair + ball",
+            "expenseType": "Other expense",
+            "timestamp": 1720296885218,
+            "transactionType": "Expense"
+            }
+        }
+        },
+        "shakhawatt": {
+        "categories": {
+            "-O0z8MQ__d6zBI6TgsQJ": {
+            "creationDate": "05/07/2024",
+            "isExpense": false,
+            "name": "salary",
+            "value": "salary"
+            },
+            "-O0z8TDsrcb92ouGD-ms": {
+            "creationDate": "05/07/2024",
+            "isExpense": true,
+            "name": "Food",
+            "value": "Food"
+            },
+            "-O12_hVpiqnXLtH4bVzy": {
+            "creationDate": "05/07/2024",
+            "isExpense": true,
+            "name": "mess",
+            "value": "mess"
+        },
+        "transactions": {
+            "-O18eCKgIRkGPenotM7G": {
+            "amount": "4000",
+            "date": "2024-07-06",
+            "description": "Habibs money",
+            "expenseType": "Amma",
+            "timestamp": 1720296461784,
+            "transactionType": "Expense"
+            },
+            "-O18f5QhHYFc3tf1Bmzn": {
+            "amount": "41700",
+            "date": "2024-07-01",
+            "description": "Prep Salary+ prev month savings",
+            "expenseType": "Savings",
+            "timestamp": 1720296695582,
+            "transactionType": "CashIn"
+            },
+            "-O18foiayNWQZf3of_0l": {
+            "amount": "715",
+            "date": "2024-07-02",
+            "description": "Chair + ball",
+            "expenseType": "Other expense",
+            "timestamp": 1720296885218,
+            "transactionType": "Expense"
+        }
+        }
+    }
+    }
+    ================
+    File: transactions/addTransaction.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Add Transaction</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+        <style>
+            body, html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="container border">
+        <h1 class="mt-4 mb-3">Add Transaction</h1>
+        <form id="expenseForm">
+            <div class="mb-3">
+                <label for="transactionType" class="form-label">Transaction Type</label>
+                <select class="form-select" id="transactionType">
+                    <option value="">Select</option>
+                    <option value="Expense">Expense</option>
+                    <option value="CashIn">CashIn</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="expenseType" id="transactionLabel" class="form-label">Expense Type</label>
+                <select class="form-select" id="expenseType">
+                    <option value="">Select</option>
+                    <!-- Dynamically loaded categories will appear here -->
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+            </div>
+            <div class="mb-3">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" class="form-control" id="date">
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" rows="3" placeholder="Enter description"></textarea>
+            </div>
+            <div class="container mt-5">
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Add Transaction</button>
+                </div>
+            </div>
+        </form>
+    </div>
     <div class="container mt-5">
         <div class="text-center">
-            <h1 class="mt-4 mb-3">Expense Tracker</h1>       
-         </div>
-    </div>
-
-    <div class="row row-cols-2 g-3">
-        <div class="col">
-            <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
-        </div>
-        <div class="col">
-            <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
-        </div>
-        <div class="col">
-            <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
-        </div>
-        <div class="col">
-            <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
-        </div>
-        <div class="col">
-            <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
-        </div>
-        <div class="col">
-            <a type="button" class="btn btn-info w-100">Sadqah</a>
+            <a type="button" href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
         </div>
     </div>
-</div>
-
-
-    <script>
-            const tableData = JSON.parse(localStorage.getItem('transactionsTable'));
-            console.log(tableData);
-
-    </script>
-
-<!-- Bootstrap 5 JS and dependencies -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
-<!-- Custom JS -->
-</body>
-</html>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+    <script src="../assets/js/transactions/addTransaction.js" type="module"></script>
+    <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+    </body>
+    </html>
+    ================
+    File: transactions/cashInList.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Transaction List</title>
+        <!-- Bootstrap 5 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Custom CSS -->
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+            #listContainer {
+                height: 700px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            table {
+                width: 100%;
+                height: auto;
+                table-layout: fixed;
+                border-collapse: collapse;
+            }
+            thead {
+                position: sticky;
+                top: 0;
+                background-color: #f8f9fa; /* Light gray background */
+                z-index: 10;
+            }
+            th,td {
+                height: 50px; /* Set the height of cells */
+                width: 50px; /* Make cell width span the full width of the table */
+                text-align: center; /* Center text horizontally */
+                vertical-align: middle; /* Center text vertically */
+                word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                overflow-wrap: break-word;
+                border: 1px solid #dee2e6;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="text-center">
+            <h1 class="mt-4 mb-3">Transaction List</h1>
+        </div>
+        <div id="listContainer" class="container border">
+            <table id="listTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Desc</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+            </div>
+        </div>
+        <!-- Bootstrap 5 JS and dependencies -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+        <!-- Custom JS -->
+        <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+        <script src="../assets/js/transactions/CashInList.js" type="module"></script>
+    </body>
+    </html>
+    ================
+    File: transactions/transactionDetails.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Transaction Details</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container border">
+            <h1 class="mt-4 mb-3">Edit Transaction Details</h1>
+            <form id="transactionForm">
+                <div class="mb-3">
+                    <label for="transactionType" class="form-label">Transaction Type</label>
+                    <select class="form-select" id="transactionType">
+                        <option value="">Select</option>
+                        <option value="Expense">Expense</option>
+                        <option value="CashIn">CashIn</option>
+                    </select>
+                    <label for="expenseType" class="form-label">Expense Type</label>
+                    <select class="form-select" id="expenseType">
+                        <option value="">Select</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+                </div>
+                <div class="mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date">
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" rows="3" placeholder="Enter description"></textarea>
+                </div>
+                <div class="mb-3 text-center">
+                    <button type="submit" class="btn btn-primary">Update Transaction</button>
+                    <button type="button" id="deleteBtn" class="btn btn-danger">Delete Transaction</button>
+                </div>
+            </form>
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a href="transactionList.html" class="btn btn-info ">Back to List</a>
+                <a href="../index.html" class="btn btn-warning ">Back to Menu</a>
+            </div>
+        </div>
+        <script src="../assets/js/fireBaseConfig.js" type="module"></script>
+        <script src="../assets/js/transactions/transactionDetails.js" type="module"></script>
+    </body>
+    </html>
+    ================
+    File: transactions/transactionList.html
+    ================
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+        <title>Transaction List</title>
+        <!-- Bootstrap 5 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Custom CSS -->
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            .container {
+                max-width: 1080px;
+                margin: auto;
+                padding: 10px;
+            }
+            #listContainer {
+                height: 700px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            table {
+                width: 100%;
+                height: auto;
+                table-layout: fixed;
+                border-collapse: collapse;
+            }
+            thead {
+                position: sticky;
+                top: 0;
+                background-color: #f8f9fa; /* Light gray background */
+                z-index: 10;
+            }
+            th,td {
+                height: 50px; /* Set the height of cells */
+                width: 50px; /* Make cell width span the full width of the table */
+                text-align: center; /* Center text horizontally */
+                vertical-align: middle; /* Center text vertically */
+                word-wrap: break-word; /* Allow words to be broken if they can't fit on one line */
+                overflow-wrap: break-word;
+                border: 1px solid #dee2e6;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="text-center">
+            <h1 class="mt-4 mb-3">Transaction List</h1>
+        </div>
+        <div id="listContainer" class="container border">
+            <table id="listTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Desc</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div class="container mt-5">
+            <div class="text-center">
+                <a href="../index.html" class="btn btn-warning w-100">Back to Menu</a>
+            </div>
+        </div>
+        <!-- Bootstrap 5 JS and dependencies -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+        <!-- Custom JS -->
+        <!-- <script src="assets/js/addExpense.js" type="module"></script> -->
+        <script src="../assets/js/transactions/transactionList.js" type="module"></script>
+    </body>
+    </html>

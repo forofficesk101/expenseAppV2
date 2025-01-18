@@ -1,46 +1,40 @@
-import { db } from "../fireBaseConfig.js";
+import { auth, db } from "../fireBaseConfig.js";
 import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
 
 const expenseForm = document.getElementById('expenseForm');
 const expenseTypeSelect = document.getElementById('expenseType');
 const transactionTypeSelect = document.getElementById('transactionType');
 const transactionLabel = document.getElementById('transactionLabel');
-const userId = 'shakhawatt';  // Define the user ID here or retrieve from user authentication session
 
 // Handle transaction type change
 transactionTypeSelect.addEventListener('change', () => {
-    // console.log("triggerd");
-    expenseTypeSelect.value = "";
-    transactionLabel.textContent = `${transactionTypeSelect.value} Type`;
-    updateExpenseOptions(transactionTypeSelect.value);
+    const selectedType = transactionTypeSelect.value;
+    expenseTypeSelect.innerHTML = '<option value="">Select</option>'; // Reset options
+    transactionLabel.textContent = `${selectedType} Type`;
+
+    if (selectedType) {
+        const userId = auth.currentUser.uid;
+        const categoriesRef = ref(db, `users/${userId}/categories`);
+        
+        onValue(categoriesRef, (snapshot) => {
+            const categories = snapshot.val();
+            if (categories) {
+                Object.entries(categories).forEach(([key, category]) => {
+                    // For Expense type, show expense categories. For CashIn, show income categories
+                    if ((selectedType === 'Expense' && category.isExpense) || 
+                        (selectedType === 'CashIn' && !category.isExpense)) {
+                        const option = document.createElement('option');
+                        option.value = category.value;
+                        option.textContent = category.name;
+                        expenseTypeSelect.appendChild(option);
+                    }
+                });
+            }
+        }, {
+            onlyOnce: true
+        });
+    }
 });
-
-// Fetch and filter categories based on transaction type
-function updateExpenseOptions(transactionType) {
-    onValue(ref(db, `users/${userId}/categories`), (snapshot) => {
-        const categories = snapshot.val();
-        expenseTypeSelect.innerHTML = '';
-        if (categories) {
-            console.log(transactionType);
-            Object.keys(categories).forEach(key => {
-                const category = categories[key];
-                console.log(category);
-
-                if (transactionType === 'Expense' && category.isExpense) {
-                    const option = document.createElement('option');
-                    option.value = category.value;
-                    option.textContent = category.name;
-                    expenseTypeSelect.appendChild(option);
-                } else if (transactionType === 'CashIn' && !category.isExpense) {
-                    const option = document.createElement('option');
-                    option.value = category.value;
-                    option.textContent = category.name;
-                    expenseTypeSelect.appendChild(option);
-                }
-            });
-        }
-    });
-}
 
 // Handle form submission
 expenseForm.addEventListener('submit', async (e) => {
@@ -51,18 +45,27 @@ expenseForm.addEventListener('submit', async (e) => {
     const description = document.getElementById('description').value;
     const date = document.getElementById('date').value;
 
-    const newTransactionRef = push(ref(db, `users/${userId}/transactions`));
-    set(newTransactionRef, {
-        transactionType: transactionType,
-        expenseType: expenseType,
-        amount: amount,
-        description: description,
-        date: date,
-        timestamp: Date.now()
-    }).then(() => {
+    if (!transactionType || !expenseType || !amount || !date) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        const userId = auth.currentUser.uid;
+        const newTransactionRef = push(ref(db, `users/${userId}/transactions`));
+        await set(newTransactionRef, {
+            transactionType: transactionType,
+            expenseType: expenseType,
+            amount: amount,
+            description: description,
+            date: date,
+            timestamp: Date.now()
+        });
+
         alert(`${transactionType} successfully added!`);
-    }).catch((error) => {
+        expenseForm.reset();
+    } catch (error) {
         console.error('Error adding transaction: ', error);
         alert('Failed to add transaction. Please try again.');
-    });
+    }
 });
