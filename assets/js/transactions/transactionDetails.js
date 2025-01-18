@@ -1,5 +1,6 @@
-import { db } from "../fireBaseConfig.js";
-import { ref, onValue, update,set  } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+import { auth, db } from "../fireBaseConfig.js";
+import { ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-auth.js";
 
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -9,10 +10,7 @@ function getQueryParam(param) {
 function populateOptions(filterExpense) {
     const selectElement = document.getElementById('expenseType');
     const data = JSON.parse(localStorage.getItem('categoriesOnDb'));
-    // console.log(data);
-    // console.log(filterExpense);
-    var isExpnese =  filterExpense == "Expense" ? true: false ;
-   
+    var isExpense = filterExpense == "Expense" ? true : false;
 
     // Clear existing options except the first "Select" option
     selectElement.length = 1;
@@ -22,7 +20,7 @@ function populateOptions(filterExpense) {
         const item = data[key];
         
         // Check the isExpense property based on the filterExpense parameter
-        if (item.isExpense === isExpnese) {
+        if (item.isExpense === isExpense) {
             // Create a new option element
             const option = new Option(item.name, item.value);
             // Append the option to the select element
@@ -31,63 +29,76 @@ function populateOptions(filterExpense) {
     }
 }
 
-function fetchTransactionDetails(transactionId) {
-    const userId = 'shakhawatt';
+function fetchTransactionDetails(userId, transactionId) {
     const transactionRef = ref(db, `users/${userId}/transactions/${transactionId}`);
-
+    
     onValue(transactionRef, (snapshot) => {
         const data = snapshot.val();
-        // console.log(data);
-        populateOptions(data.transactionType);
         if (data) {
+            populateOptions(data.transactionType);
             document.getElementById('transactionType').value = data.transactionType || '';
             document.getElementById('expenseType').value = data.expenseType || '';
             document.getElementById('amount').value = data.amount || '';
             document.getElementById('date').value = data.date || '';
             document.getElementById('description').textContent = data.description || '';
+        } else {
+            alert('Transaction not found');
+            window.location.href = 'transactionList.html';
         }
     }, {
         onlyOnce: true
     });
 }
 
-document.getElementById('transactionForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+// Initialize with auth check
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = '../login.html';
+        return;
+    }
+
     const transactionId = getQueryParam('id');
-    const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
+    if (!transactionId) {
+        alert('No transaction ID provided');
+        window.location.href = 'transactionList.html';
+        return;
+    }
 
-    const updatedData = {
-        expenseType: document.getElementById('expenseType').value,
-        amount: document.getElementById('amount').value,
-        date: document.getElementById('date').value,
-        description: document.getElementById('description').value
-    };
+    // Set up form submission handler
+    document.getElementById('transactionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const transactionRef = ref(db, `users/${user.uid}/transactions/${transactionId}`);
 
-    update(transactionRef, updatedData).then(() => {
-        alert('Transaction successfully updated!');
-    }).catch((error) => {
-        console.error('Error updating transaction: ', error);
-        alert('Failed to update transaction. Please try again.');
+        const updatedData = {
+            expenseType: document.getElementById('expenseType').value,
+            amount: document.getElementById('amount').value,
+            date: document.getElementById('date').value,
+            description: document.getElementById('description').value
+        };
+
+        update(transactionRef, updatedData).then(() => {
+            alert('Transaction successfully updated!');
+        }).catch((error) => {
+            console.error('Error updating transaction: ', error);
+            alert('Failed to update transaction. Please try again.');
+        });
     });
-});
 
-document.getElementById('deleteBtn').addEventListener('click', function() {
-    const transactionId = getQueryParam('id');
-    const transactionRef = ref(db, `users/shakhawatt/transactions/${transactionId}`);
-
-    // Use set() with null to remove data in Firebase 9.x
-    set(transactionRef, null).then(() => {
-        alert('Transaction successfully deleted!');
-        window.location.href = 'transactionList.html'; // Redirect to transaction list after deletion
-    }).catch((error) => {
-        console.error('Error deleting transaction: ', error);
-        alert('Failed to delete transaction. Please try again.');
+    // Set up delete button handler
+    document.getElementById('deleteBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to delete this transaction?')) {
+            const transactionRef = ref(db, `users/${user.uid}/transactions/${transactionId}`);
+            set(transactionRef, null).then(() => {
+                alert('Transaction successfully deleted!');
+                window.location.href = 'transactionList.html';
+            }).catch((error) => {
+                console.error('Error deleting transaction: ', error);
+                alert('Failed to delete transaction. Please try again.');
+            });
+        }
     });
+
+    // Load transaction details
+    fetchTransactionDetails(user.uid, transactionId);
 });
-const transactionId = getQueryParam('id');
-if (transactionId) {
-    fetchTransactionDetails(transactionId);
-} else {
-    alert('No transaction ID provided.');
-}
 

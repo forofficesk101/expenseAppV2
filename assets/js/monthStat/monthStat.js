@@ -1,5 +1,6 @@
-import { db } from "../fireBaseConfig.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+import { auth, db } from "../fireBaseConfig.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-database.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.9.1/firebase-auth.js";
 
 // Function to format date as "17th June, 2024"
 function formatDate(dateString) {
@@ -7,7 +8,6 @@ function formatDate(dateString) {
     const day = date.getDate();
     const month = date.toLocaleString('default', { month: 'long' });
     const year = date.getFullYear();
-
     return `${getOrdinal(day)} ${month}, ${year}`;
 }
 
@@ -18,8 +18,7 @@ function getOrdinal(n) {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-function fetchTransactions() {
-    const userId = 'shakhawatt'; // Your user ID
+function fetchTransactions(userId) {
     const transactionsRef = ref(db, `users/${userId}/transactions`);
 
     onValue(transactionsRef, (snapshot) => {
@@ -52,7 +51,10 @@ function fetchTransactions() {
             });
 
             // Convert monthData object to array and sort in descending order of monthYear
-            const sortedMonthData = Object.keys(monthData).sort((a, b) => new Date(b.split(',')[1], new Date(a.split(',')[0]).getMonth()) - new Date(a.split(',')[1], new Date(b.split(',')[0]).getMonth()));
+            const sortedMonthData = Object.keys(monthData).sort((a, b) => 
+                new Date(b.split(',')[1], new Date(a.split(',')[0]).getMonth()) - 
+                new Date(a.split(',')[1], new Date(b.split(',')[0]).getMonth())
+            );
 
             // Save the sorted month data to local storage
             saveToLocalStorage(sortedMonthData, monthData);
@@ -97,7 +99,7 @@ function fetchTransactions() {
                             <th colspan="2" style="text-align:center; font-weight:bold; background-color: #d4edda;">${monthYear} - CashIn</th>
                         </tr>
                         <tr>
-                            <th>Expense Type</th>
+                            <th>Type</th>
                             <th>Total Amount</th>
                         </tr>
                     </thead>
@@ -126,29 +128,27 @@ function fetchTransactions() {
     });
 }
 
-// Function to save data to local storage
-function saveToLocalStorage(sortedMonthData, monthData) {
-    // localStorage.removeItem('transactionsTableData');
-    const tableData = sortedMonthData.map(monthYear => {
-        const expenses = monthData[monthYear].expenses;
-        const cashins = monthData[monthYear].cashins;
-        return {
-            monthYear,
-            expenses,
-            cashins
-        };
-    });
-    console.log( JSON.stringify(tableData))
-    localStorage.setItem('transactionsTableData', JSON.stringify(tableData));
-}
-
-// Helper functions `formatDate` and `getMonthYear` (assuming they're already defined)
-
 // Helper function to get "Month, Year" from a date string
 function getMonthYear(dateStr) {
     const date = new Date(dateStr);
     return date.toLocaleString('default', { month: 'long' }) + ',' + date.getFullYear();
 }
 
-// Call the function to fetch transactions when the script loads
-fetchTransactions();
+// Function to save data to local storage
+function saveToLocalStorage(sortedMonthData, monthData) {
+    const tableData = sortedMonthData.map(monthYear => ({
+        monthYear,
+        expenses: monthData[monthYear].expenses,
+        cashins: monthData[monthYear].cashins
+    }));
+    localStorage.setItem('monthlyStats', JSON.stringify(tableData));
+}
+
+// Initialize with auth check
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        fetchTransactions(user.uid);
+    } else {
+        window.location.href = '../login.html';
+    }
+});

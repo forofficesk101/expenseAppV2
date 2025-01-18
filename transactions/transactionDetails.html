@@ -6,15 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     <title>Transaction Details</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Custom CSS -->
     <style>
-        body,
-        html {
+        body, html {
             height: 100%;
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
         }
-
         .container {
             max-width: 1080px;
             margin: auto;
@@ -54,19 +55,18 @@
             <div class="mb-3 text-center">
                 <button type="submit" class="btn btn-primary">Update Transaction</button>
                 <button type="button" id="deleteBtn" class="btn btn-danger">Delete Transaction</button>
-
             </div>
         </form>
     </div>
     <div class="container mt-5">
         <div class="text-center">
-            <a href="transactionList.html" class="btn btn-info ">Back to List</a>
-
-            <a href="../index.html" class="btn btn-warning ">Back to Menu</a>
+            <a href="transactionList.html" class="btn btn-info">Back to List</a>
+            <a href="../index.html" class="btn btn-warning">Back to Menu</a>
         </div>
     </div>
-    <script src="../assets/js/fireBaseConfig.js" type="module"></script>
-    <script src="../assets/js/transactions/transactionDetails.js" type="module"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../assets/js/transactions/transactionDetails.js"></script>
 </body>
 
 </html>
