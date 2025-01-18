@@ -1,0 +1,137 @@
+{
+  "users": {
+    "shakhawathossain": {
+      "categories": {
+        "-O-eP7h6Dy2vzJjrGbIz": {
+          "creationDate": "18/06/2024",
+          "isExpense": true,
+          "name": "Mess",
+          "value": "Mess"
+        },
+        "-O-ePA6pz8a0TueAGWG1": {
+          "creationDate": "18/06/2024",
+          "isExpense": true,
+          "name": "Entertainment",
+          "value": "Entertainment"
+        },
+        "-O-ePCHHHQfl3KPS3Xk1": {
+          "creationDate": "18/06/2024",
+          "isExpense": true,
+          "name": "Food",
+          "value": "Food"
+        },
+        "-O-ePKbCyX5iUfkpjBmx": {
+          "creationDate": "18/06/2024",
+          "isExpense": true,
+          "name": "Outing",
+          "value": "Outing"
+        },
+        "-O-ePS1gtAYr4vG2egMI": {
+          "creationDate": "18/06/2024",
+          "isExpense": true,
+          "name": "Home Expense",
+          "value": "Home Expense"
+        },
+        "-O0EFfk2GOYsENgBE3K-": {
+          "creationDate": "25/06/2024",
+          "isExpense": false,
+          "name": "salary",
+          "value": "salary"
+        },
+        "-O0FadlOC_DgOtGjOQR4": {
+          "creationDate": "26/06/2024",
+          "isExpense": false,
+          "name": "Tuition",
+          "value": "Tuition"
+        },
+        "-O0FahfZwVoWc5oG2GxC": {
+          "creationDate": "26/06/2024",
+          "isExpense": false,
+          "name": "Loan Payback",
+          "value": "Loan Payback"
+        },
+        "-O0FalaJ51S-0DKsTXzV": {
+          "creationDate": "26/06/2024",
+          "isExpense": false,
+          "name": "Bonus",
+          "value": "Bonus"
+        }
+      },
+      "transactions": {
+        "-O18eCKgIRkGPenotM7G": {
+          "amount": "4000",
+          "date": "2024-07-06",
+          "description": "Habibs money",
+          "expenseType": "Amma",
+          "timestamp": 1720296461784,
+          "transactionType": "Expense"
+        },
+        "-O18f5QhHYFc3tf1Bmzn": {
+          "amount": "41700",
+          "date": "2024-07-01",
+          "description": "Prep Salary+ prev month savings",
+          "expenseType": "Savings",
+          "timestamp": 1720296695582,
+          "transactionType": "CashIn"
+        },
+        "-O18foiayNWQZf3of_0l": {
+          "amount": "715",
+          "date": "2024-07-02",
+          "description": "Chair + ball",
+          "expenseType": "Other expense",
+          "timestamp": 1720296885218,
+          "transactionType": "Expense"
+        
+        }
+      }
+    },
+    "shakhawatt": {
+      "categories": {
+        "-O0z8MQ__d6zBI6TgsQJ": {
+          "creationDate": "05/07/2024",
+          "isExpense": false,
+          "name": "salary",
+          "value": "salary"
+        },
+        "-O0z8TDsrcb92ouGD-ms": {
+          "creationDate": "05/07/2024",
+          "isExpense": true,
+          "name": "Food",
+          "value": "Food"
+        },
+        "-O12_hVpiqnXLtH4bVzy": {
+          "creationDate": "05/07/2024",
+          "isExpense": true,
+          "name": "mess",
+          "value": "mess"
+      },
+      "transactions": {
+        "-O18eCKgIRkGPenotM7G": {
+          "amount": "4000",
+          "date": "2024-07-06",
+          "description": "Habibs money",
+          "expenseType": "Amma",
+          "timestamp": 1720296461784,
+          "transactionType": "Expense"
+        },
+        "-O18f5QhHYFc3tf1Bmzn": {
+          "amount": "41700",
+          "date": "2024-07-01",
+          "description": "Prep Salary+ prev month savings",
+          "expenseType": "Savings",
+          "timestamp": 1720296695582,
+          "transactionType": "CashIn"
+        },
+        "-O18foiayNWQZf3of_0l": {
+          "amount": "715",
+          "date": "2024-07-02",
+          "description": "Chair + ball",
+          "expenseType": "Other expense",
+          "timestamp": 1720296885218,
+          "transactionType": "Expense"
+        
+        
+      }
+    }
+  }
+}

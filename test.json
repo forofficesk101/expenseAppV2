@@ -1,0 +1,38 @@
+{
+    "users": {
+        "shakhwat": {
+            "site1":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            },
+            "site2":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            },
+            "site3":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            }
+        },
+        "Taspia": {
+            "site1":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            },
+            "site2":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            },
+            "site3":{
+                "sideId": "facebook.com",
+                "username": "shakhwat01",
+                "Password": "101010"
+            }
+        }
+    }
+}

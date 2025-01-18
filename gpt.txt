@@ -1,0 +1,109 @@
+I have a object like below in localstorage as "transactionsTableData" I wanna take the first object which will be the current month data, show it on the index page.
+there wil be a table where there will be two columns. one for key another for values.  the table should have three rows. wallet, Expenses and Cashin. the wallets value should
+be the difference of cashin  and expense. refactor the html and create js if need to do this:
+
+the object from localstorage:
+[
+    {
+        "monthYear": "June,2024",
+        "expenses": {
+            "Entertainment": 129,
+            "Food": 653,
+            "food": 10
+        },
+        "cashins": {
+            "salary": 42000,
+            "Tuition": 5000
+        }
+    },
+    {
+        "monthYear": "May,2024",
+        "expenses": {
+            "Outing": 640,
+            "Transport": 728,
+            "Food": 1904
+        },
+        "cashins": {}
+    },
+    {
+        "monthYear": "April,2024",
+        "expenses": {
+            "Food": 767,
+            "Outing": 2180,
+            "Home Expense": 173,
+            "Transport": 891
+        },
+        "cashins": {
+            "Loan Payback": 600
+        }
+    }
+
+]
+
+the index page:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Main Menu</title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .container {
+            max-width: 1080px;
+            margin: auto;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container border">
+    <div class="container mt-5">
+        <div class="text-center">
+            <h1 class="mt-4 mb-3">Expense Tracker</h1>       
+         </div>
+    </div>
+
+    <div class="row row-cols-2 g-3">
+        <div class="col">
+            <a type="button" href="./transactions/addTransaction.html" class="btn btn-primary w-100">Add Expense</a>
+        </div>
+        <div class="col">
+            <a type="button" href="./transactions/transactionList.html" class="btn btn-secondary w-100">Expense List</a>
+        </div>
+        <div class="col">
+            <a type="button" href="./category/categoryList.html" class="btn btn-success w-100">Manage Category</a>
+        </div>
+        <div class="col">
+            <a type="button" href="./monthStat/monthStat.html"  class="btn btn-danger w-100">Monthly Stats</a>
+        </div>
+        <div class="col">
+            <a type="button" href="./transactions/cashInList.html"  class="btn btn-warning w-100">Cash Ins</a>
+        </div>
+        <div class="col">
+            <a type="button" class="btn btn-info w-100">Sadqah</a>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+            const tableData = JSON.parse(localStorage.getItem('transactionsTable'));
+            console.log(tableData);
+
+    </script>
+
+<!-- Bootstrap 5 JS and dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+<!-- Custom JS -->
+</body>
+</html>
