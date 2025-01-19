@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sadaqah Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        .table tbody tr:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+        .edit-icon {
+            cursor: pointer;
+            color: #0d6efd;
+        }
+        .edit-icon:hover {
+            color: #0a58ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Sadaqah</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSadaqahModal">
+                <i class="bi bi-plus-lg"></i> Add Sadaqah
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="sadaqahTableBody">
+                    <!-- Sadaqah entries will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add/Edit Sadaqah Modal -->
+        <div class="modal fade" id="addSadaqahModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Add New Sadaqah</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="sadaqahForm">
+                            <input type="hidden" id="sadaqahId">
+                            <div class="mb-3">
+                                <label for="sadaqahName" class="form-label">Sadaqah Name</label>
+                                <input type="text" class="form-control" id="sadaqahName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="sadaqahAmount" class="form-label">Sadaqah Amount</label>
+                                <input type="number" class="form-control" id="sadaqahAmount" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="remainingAmount" class="form-label">Remaining Amount</label>
+                                <input type="number" class="form-control" id="remainingAmount" readonly>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-danger" id="deleteSadaqahBtn" style="display: none;">Delete</button>
+                        <button type="button" class="btn btn-primary" id="saveSadaqahBtn">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="../index.html" class="btn btn-secondary">Back to Menu</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/sadaqah/sadaqah.js" type="module"></script>
+</body>
+</html> 
