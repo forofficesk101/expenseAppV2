@@ -11,6 +11,13 @@
             background-color: #f5f5f5;
             cursor: pointer;
         }
+        .edit-icon {
+            cursor: pointer;
+            color: #0d6efd;
+        }
+        .edit-icon:hover {
+            color: #0a58ca;
+        }
     </style>
 </head>
 <body>
@@ -23,12 +30,13 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Name</th>
                         <th>Amount</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="loansTableBody">
@@ -37,18 +45,19 @@
             </table>
         </div>
 
-        <!-- Add Loan Modal -->
+        <!-- Add/Edit Loan Modal -->
         <div class="modal fade" id="addLoanModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add New Loan</h5>
+                        <h5 class="modal-title" id="modalTitle">Add New Loan</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="addLoanForm">
+                        <form id="loanForm">
+                            <input type="hidden" id="loanId">
                             <div class="mb-3">
-                                <label for="loanName" class="form-label">Name</label>
+                                <label for="loanName" class="form-label">Loan Name</label>
                                 <input type="text" class="form-control" id="loanName" required>
                             </div>
                             <div class="mb-3">
@@ -59,28 +68,12 @@
                                 <label for="remainingAmount" class="form-label">Remaining Amount</label>
                                 <input type="number" class="form-control" id="remainingAmount" readonly>
                             </div>
-
-                            <h6 class="mt-4">Installments</h6>
-                            <div class="table-responsive">
-                                <table class="table" id="installmentsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Amount</th>
-                                            <th>Date</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="installmentsTableBody">
-                                        <!-- Dynamic installment rows -->
-                                    </tbody>
-                                </table>
-                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" id="saveLoanBtn">Save Loan</button>
+                        <button type="button" class="btn btn-danger" id="deleteLoanBtn" style="display: none;">Delete</button>
+                        <button type="button" class="btn btn-primary" id="saveLoanBtn">Save</button>
                     </div>
                 </div>
             </div>
