@@ -142,13 +142,9 @@ onAuthStateChanged(auth, async (user) => {
         const userData = snapshot.val();
 
         // Show/hide admin buttons based on role
-        const adminButtons = document.getElementById('adminButtons');
-        if (adminButtons) {  // First check if element exists
-            if (userData && userData.role === 'admin') {
-                adminButtons.style.display = 'block';
-            } else {
-                adminButtons.style.display = 'none';
-            }
+        const usersMenuItem = document.getElementById('usersMenuItem');
+        if (usersMenuItem) {
+            usersMenuItem.style.display = userData && userData.role === 'admin' ? 'block' : 'none';
         }
 
         // Fetch and store all user data
